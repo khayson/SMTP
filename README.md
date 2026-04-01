@@ -53,4 +53,4 @@ final smtpServer = SmtpServer('127.0.0.1', port: 1025);
 Postmaster is built by developers, for developers. If you have any suggestions or find a bug, feel free to open an issue!
 
 ---
-*Created by [I. K. AGYEI COMPANY LTD](https://github.com/khayson)*
+*Created by [KHAY STUDIOS](https://github.com/khayson)*
