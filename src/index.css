@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: #a0aec0;
+  background-color: #0b0e14;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0b0e14;
+}
+
+/* Mailtrap Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0b0e14;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Flat Utility Components */
+.mailtrap-panel {
+  background: #0b0e14;
+  border: 1px solid #1e293b;
+}
+
+.mailtrap-card {
+  background: #11141b;
+  border: 1px solid #1e293b;
+  transition: all 0.2s ease;
+}
+
+.mailtrap-card:hover {
+  border-color: #334155;
+}
+
+.mailtrap-input {
+  background: #11141b;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.mailtrap-input:focus {
+  border-color: #3b82f6;
+}
+
+.mailtrap-button-primary {
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mailtrap-button-primary:hover {
+  background: #2563eb;
+}
+
+.mailtrap-tab-active {
+  color: #e2e8f0;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.mailtrap-tab-inactive {
+  color: #718096;
+}
+
+.mailtrap-tab-inactive:hover {
+  color: #a0aec0;
+}
+
+/* Monospace Data Only */
+.data-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}

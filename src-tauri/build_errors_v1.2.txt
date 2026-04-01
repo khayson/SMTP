@@ -1,0 +1,22 @@
+   Compiling tauri-build v2.5.6
+    Checking webview2-com-sys v0.38.2
+   Compiling tauri-plugin v2.5.4
+    Checking tao v0.34.8
+   Compiling tauri-codegen v2.5.5
+    Checking lettre v0.11.20
+error: Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
+           If you were trying to opt into `rustls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+           Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.
+   --> C:\Users\VICTUS\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\lettre-0.11.20\src\lib.rs:233:5
+    |
+233 | /     compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't bee...
+234 | |     If you were trying to opt into `rustls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and...
+235 | |     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
+    | |________________________________________________________________________________________________^
+
+   Compiling tauri-plugin-opener v2.5.3
+   Compiling tauri v2.10.3
+   Compiling tauri-app v0.1.0 (C:\Users\VICTUS\Desktop\SMTP\src-tauri)
+   Compiling tauri-macros v2.5.5
+error: could not compile `lettre` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
