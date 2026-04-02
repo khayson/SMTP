@@ -5,7 +5,9 @@ mod smtp;
 
 use reqwest::Client;
 use std::path::PathBuf;
-use tauri::Manager;
+use tauri::{AppHandle, Emitter, Manager};
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{TrayIcon, TrayIconBuilder, TrayIconEvent};
 
 pub struct AppState {
     pub db_path: PathBuf,
@@ -64,6 +66,16 @@ async fn get_relay_settings(
         Some(json) => serde_json::from_str(&json).map_err(|e| e.to_string()),
         None => Ok(None),
     }
+}
+
+#[tauri::command]
+async fn get_settings(state: tauri::State<'_, AppState>, key: String) -> Result<Option<String>, String> {
+    db::get_settings(&state.db_path, &key).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_settings(state: tauri::State<'_, AppState>, key: String, value: String) -> Result<(), String> {
+    db::update_settings(&state.db_path, &key, &value).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -238,6 +250,13 @@ async fn replay_webhook_dispatch(
     }
 }
 
+#[tauri::command]
+async fn validate_license(license_key: String) -> Result<bool, String> {
+    // V1.2 Placeholder: Always returns true for current release
+    println!("Validating commercial license: {}", license_key);
+    Ok(true)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -252,6 +271,37 @@ pub fn run() {
                 .set_focus();
         }))
         .setup(|app| {
+            // V1.2: System Tray Initialization
+            let show_item = MenuItem::with_id(app, "show", "Show Studio", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit Postmaster", true, None::<&str>)?;
+            let tray_menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&tray_menu)
+                .on_menu_event(|app: &AppHandle, event| {
+                    match event.id.as_ref() {
+                        "show" => {
+                            let window = app.get_webview_window("main").unwrap();
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray: &TrayIcon, event| {
+                    if let TrayIconEvent::Click { .. } = event {
+                        let app = tray.app_handle();
+                        let window = app.get_webview_window("main").unwrap();
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                })
+                .build(app)?;
+
             let app_data_dir = app
                 .path()
                 .app_data_dir()
@@ -277,10 +327,16 @@ pub fn run() {
                 http_client: http_client.clone(),
             });
 
-            let smtp_server = smtp::SmtpServer::new(1025, db_path, app_handle, http_client);
+            let port = match db::get_settings(&db_path, "smtp_port") {
+                Ok(Some(p)) => p.parse::<u16>().unwrap_or(1025),
+                _ => 1025,
+            };
+
+            let smtp_server = smtp::SmtpServer::new(port, db_path, app_handle.clone(), http_client);
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = smtp_server.run().await {
                     eprintln!("SMTP Server Error: {}", e);
+                    let _ = app_handle.emit("smtp-error", format!("Failed to start SMTP server on port {}: {}. This port might be in use by another application.", port, e));
                 }
             });
 
@@ -304,8 +360,17 @@ pub fn run() {
             get_webhook_stats_7d,
             replay_webhook_dispatch,
             mark_as_read,
-            mark_all_as_read
+            mark_all_as_read,
+            validate_license,
+            get_settings,
+            update_settings
         ])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

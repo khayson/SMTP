@@ -24,6 +24,7 @@ import {
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { listen } from "@tauri-apps/api/event";
 import WebhooksView from "./components/WebhooksView";
 
 interface Email {
@@ -67,6 +68,8 @@ function App() {
   const [newProjectName, setNewProjectName] = useState("");
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [smtpError, setSmtpError] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const isResizing = useRef(false);
 
   const fetchEmails = async () => {
@@ -149,6 +152,24 @@ function App() {
       }
     };
     checkForUpdates();
+
+    // Check for onboarding
+    const checkFirstRun = async () => {
+      const isFirstRun = localStorage.getItem('postmaster_onboarding_complete') !== 'true';
+      if (isFirstRun) setShowOnboarding(true);
+    };
+    checkFirstRun();
+  }, []);
+
+  // Listen for SMTP Errors
+  useEffect(() => {
+    const unlisten = listen<string>("smtp-error", (event) => {
+      setSmtpError(event.payload);
+      console.error("SMTP Error received:", event.payload);
+    });
+    return () => {
+      unlisten.then(f => f());
+    };
   }, []);
 
   // External Link Interceptor for Iframes
@@ -266,6 +287,33 @@ function App() {
       {toast.show && (
         <div className="fixed top-4 right-4 z-50 bg-[#2563eb] text-white px-4 py-2 rounded shadow-2xl animate-in fade-in duration-300 text-xs font-semibold border border-white/10 uppercase tracking-widest italic leading-none flex items-center gap-2">
           <Zap size={12} fill="currentColor" /> {toast.message}
+        </div>
+      )}
+
+      {/* SMTP Error Banner */}
+      {smtpError && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white px-6 py-3 flex items-center justify-between shadow-2xl animate-in slide-in-from-top duration-500 border-b border-red-500/20">
+          <div className="flex items-center gap-3">
+            <X size={18} className="p-1 bg-white/20 rounded-full" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Critical Conflict</span>
+              <p className="text-xs font-bold leading-none opacity-90">{smtpError}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setActiveView('settings')}
+              className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] font-black uppercase tracking-widest transition-all border border-white/20"
+            >
+              Change Port
+            </button>
+            <button 
+              onClick={() => setSmtpError(null)}
+              className="p-1 hover:bg-white/10 rounded transition-all"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -488,11 +536,74 @@ function App() {
             </div>
           ) : activeView === 'webhooks' ? (
             <WebhooksView onNotify={notify} />
+          ) : activeView === 'help' ? (
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0b0e14] p-12">
+              <div className="max-w-4xl mx-auto space-y-12 pb-24">
+                <div className="border-l-4 border-blue-500 pl-6">
+                  <h2 className="text-4xl font-black text-[#e2e8f0] uppercase tracking-tighter italic mb-2">Quick Start Guide</h2>
+                  <p className="text-sm text-[#718096] uppercase font-bold tracking-[0.2em] opacity-60">Mastering the SMTP Studio</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="bg-[#11141b] border border-[#1e293b] p-8 rounded-2xl shadow-2xl group hover:border-blue-500/30 transition-all">
+                    <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                      <Zap size={24} />
+                    </div>
+                    <h3 className="text-lg font-black text-[#e2e8f0] uppercase tracking-widest mb-4">Interception</h3>
+                    <p className="text-xs text-[#718096] leading-relaxed">Point your application to <span className="text-blue-400 font-mono">127.0.0.1:1025</span>. Any signal sent to this port will be captured instantly, regardless of the recipient.</p>
+                  </div>
+                  
+                  <div className="bg-[#11141b] border border-[#1e293b] p-8 rounded-2xl shadow-2xl group hover:border-blue-500/30 transition-all">
+                    <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                      <Inbox size={24} />
+                    </div>
+                    <h3 className="text-lg font-black text-[#e2e8f0] uppercase tracking-widest mb-4">Isolated Inboxes</h3>
+                    <p className="text-xs text-[#718096] leading-relaxed">Use different SMTP <span className="text-blue-400 font-mono">Usernames</span> to automatically route signals into separate project silos.</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-600/5 border border-blue-500/20 p-8 rounded-2xl">
+                  <h3 className="text-[11px] font-black text-blue-500 uppercase tracking-[0.3em] mb-4">Support & Issues</h3>
+                  <p className="text-xs text-[#718096] leading-relaxed mb-6">Encountering an issue or have a feature request for KH STUDIOS? Visit the official repository to collaborate.</p>
+                  <button 
+                    onClick={() => openUrl('https://github.com/khayson/SMTP')}
+                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20"
+                  >
+                    <ExternalLink size={14} /> Open Repository
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : (
-            <UnderConstruction title={activeView === 'settings' ? 'Precision Settings' : 'Support Network'} />
+            <UnderConstruction title='Precision Settings' />
           )}
         </main>
       </div>
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+          <div className="w-full max-w-lg bg-[#0b0e14] border border-[#1e293b] rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(37,99,235,0.15)] flex flex-col animate-in zoom-in duration-500">
+            <div className="p-12 text-center">
+              <div className="w-24 h-24 bg-blue-600 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-blue-600/40 mb-10 rotate-3">P</div>
+              <h1 className="text-4xl font-black text-[#e2e8f0] uppercase tracking-tighter italic mb-4">Postmaster Studio</h1>
+              <p className="text-sm text-[#718096] mb-12 leading-relaxed italic">The premium, local-first SMTP catch-all engine for modern studio development.</p>
+              
+              <div className="space-y-4">
+                <button 
+                  onClick={() => { localStorage.setItem('postmaster_onboarding_complete', 'true'); setShowOnboarding(false); }}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20"
+                >
+                  Enter Studio
+                </button>
+              </div>
+            </div>
+            <div className="bg-[#11141b] p-4 text-center border-t border-[#1e293b]">
+              <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-widest italic opacity-50">Studio v1.2.0 • KH STUDIOS</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
