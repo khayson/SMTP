@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Zap,
   Copy,
-  Construction,
   FolderOpen,
   Mail,
   Plus,
@@ -26,6 +25,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { listen } from "@tauri-apps/api/event";
 import WebhooksView from "./components/WebhooksView";
+import SettingsModal from "./components/SettingsModal";
 
 interface Email {
   id: number;
@@ -40,24 +40,14 @@ interface Email {
   is_read: boolean;
 }
 
-const UnderConstruction = ({ title }: { title: string }) => (
-  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-[#0b0e14]">
-    <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-500 mb-8 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
-      <Construction size={40} />
-    </div>
-    <h2 className="text-2xl font-bold text-[#e2e8f0] tracking-tight mb-3 uppercase italic">{title}</h2>
-    <p className="text-sm text-[#718096] max-w-md leading-relaxed">
-      This utility module is currently being optimized for precision delivery. Please check back in subsequent build updates.
-    </p>
-  </div>
-);
 
 function App() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [projects, setProjects] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [activeView, setActiveView] = useState<'inbox' | 'webhooks' | 'settings' | 'help'>('inbox');
+  const [activeView, setActiveView] = useState<'inbox' | 'webhooks' | 'help'>('inbox');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'signals' | 'integration'>('signals');
   const [inspectorTab, setInspectorTab] = useState<'preview' | 'html' | 'text' | 'headers'>('preview');
   const [searchQuery, setSearchQuery] = useState("");
@@ -184,18 +174,12 @@ function App() {
   }, []);
 
   const wrapHtmlWithLinkHandler = (html: string) => {
-    const script = `
-      <script>
-        document.addEventListener('click', (e) => {
-          const anchor = e.target.closest('a');
-          if (anchor && anchor.href && anchor.href !== 'javascript:void(0)' && !anchor.href.startsWith('#')) {
-            e.preventDefault();
-            window.parent.postMessage({ type: 'open-external-link', url: anchor.href }, '*');
-          }
-        }, true);
-      </script>
-    `;
-    return html + script;
+    // Audit-aligned Security Hardening:
+    // Move from active JS click interception to standard <base target="_blank">
+    // and a restrictive CSP Meta tag.
+    const meta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline';">`;
+    const base = `<base target="_blank">`;
+    return meta + base + html;
   };
 
   const notify = (message: string) => {
@@ -302,7 +286,7 @@ function App() {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => setActiveView('settings')}
+              onClick={() => setIsSettingsOpen(true)}
               className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] font-black uppercase tracking-widest transition-all border border-white/20"
             >
               Change Port
@@ -333,8 +317,8 @@ function App() {
           ><ExternalLink size={24} /></button>
 
           <button 
-            onClick={() => { setActiveView('settings'); if (isSmallScreen) setIsSidebarOpen(false); }}
-            className={`p-2 rounded transition-colors ${activeView === 'settings' ? 'text-blue-500 bg-blue-500/10' : 'text-[#718096] hover:text-[#a0aec0]'}`}
+            onClick={() => setIsSettingsOpen(true)}
+            className={`p-2 rounded transition-colors ${isSettingsOpen ? 'text-blue-500 bg-blue-500/10' : 'text-[#718096] hover:text-[#a0aec0]'}`}
           ><Settings size={24} /></button>
         </nav>
 
@@ -468,7 +452,11 @@ function App() {
 
                           <div className={`flex-1 bg-white mx-0 sm:mx-8 my-4 sm:my-8 rounded-none sm:rounded-xl overflow-hidden flex flex-col border border-[#1e293b] shadow-2xl ${isSmallScreen ? 'm-0 rounded-none' : ''}`}>
                             {inspectorTab === 'preview' && (
-                              <iframe className="w-full h-full border-none" srcDoc={wrapHtmlWithLinkHandler(selectedEmail.html_body || `<pre style="padding:20px;font-family:monospace">${selectedEmail.text_body}</pre>`)} />
+                              <iframe 
+                                className="w-full h-full border-none" 
+                                sandbox="allow-same-origin allow-popups"
+                                srcDoc={wrapHtmlWithLinkHandler(selectedEmail.html_body || `<pre style="padding:20px;font-family:monospace">${selectedEmail.text_body}</pre>`)} 
+                              />
                             )}
                             {['html', 'text', 'headers'].includes(inspectorTab) && (
                               <div className="flex-1 bg-[#0b0e14] p-8 overflow-auto font-mono text-[11px] leading-relaxed select-text">
@@ -536,7 +524,7 @@ function App() {
             </div>
           ) : activeView === 'webhooks' ? (
             <WebhooksView onNotify={notify} />
-          ) : activeView === 'help' ? (
+          ) : (
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0b0e14] p-12">
               <div className="max-w-4xl mx-auto space-y-12 pb-24">
                 <div className="border-l-4 border-blue-500 pl-6">
@@ -574,11 +562,12 @@ function App() {
                 </div>
               </div>
             </div>
-          ) : (
-            <UnderConstruction title='Precision Settings' />
           )}
         </main>
       </div>
+
+      {/* Settings Precision Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       {/* Onboarding Modal */}
       {showOnboarding && (
