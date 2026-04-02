@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Play, Plus, Trash2, RotateCcw, Activity, Filter, Terminal } from 'lucide-react';
+import { Play, Trash2, RotateCcw, Activity, Filter, Terminal, Globe, Cpu, X } from 'lucide-react';
 
 interface Webhook {
   id: number;
@@ -33,7 +33,7 @@ export default function WebhooksView({ onNotify }: WebhooksViewProps) {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [newUrl, setNewUrl] = useState("");
-  const [newBlueprint, setNewBlueprint] = useState("Custom HTTP JSON");
+  const [newBlueprint, setNewBlueprint] = useState("Standard JSON");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [useRegex, setUseRegex] = useState(false);
   const [testingId, setTestingId] = useState<number | null>(null);
@@ -85,19 +85,19 @@ export default function WebhooksView({ onNotify }: WebhooksViewProps) {
       setNewUrl("");
       setSubjectFilter("");
       fetchWebhooks();
-      if (onNotify) onNotify("Rule registered successfully");
+      if (onNotify) onNotify("Dispatch rule established");
     } catch (error) {
       if (onNotify) onNotify(`${error}`);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Remove this endpoint?")) return;
+    if (!confirm("Decommission this endpoint?")) return;
     try {
       await invoke("delete_webhook", { id });
       fetchWebhooks();
       if (showHistoryId === id) setShowHistoryId(null);
-      if (onNotify) onNotify("Endpoint deleted");
+      if (onNotify) onNotify("Infrastructure decommissioned");
     } catch (error) {
       console.error(error);
     }
@@ -114,7 +114,7 @@ export default function WebhooksView({ onNotify }: WebhooksViewProps) {
         if (onNotify) onNotify("Test signal dispatched");
       }, 1000);
     } catch (error) {
-      if (onNotify) onNotify(`Test failed: ${error}`);
+      if (onNotify) onNotify(`Signal failed: ${error}`);
       setTestingId(null);
     }
   };
@@ -124,7 +124,7 @@ export default function WebhooksView({ onNotify }: WebhooksViewProps) {
     try {
       await invoke("reset_webhook_counters", { id });
       fetchWebhooks();
-      if (onNotify) onNotify("Counters reset");
+      if (onNotify) onNotify("Telemetry reset complete");
     } catch (error) {
       console.error(error);
     } finally {
@@ -133,168 +133,166 @@ export default function WebhooksView({ onNotify }: WebhooksViewProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0b0e14] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
       
-      {/* Sub-Header */}
-      <header className="h-12 px-6 border-b border-[#1e293b] flex items-center justify-between shrink-0">
-          <div className="flex gap-8 h-full">
-             <button className="h-full text-sm font-semibold text-[#e2e8f0] border-b-2 border-blue-500 px-1 flex items-center uppercase italic tracking-tighter">
-               Dispatch Rules
-             </button>
-             <button 
-               onClick={() => onNotify ? onNotify("Rule auditing coming soon") : null}
-               className="h-full text-sm font-semibold text-[#4a5568] hover:text-[#718096] px-1 flex items-center uppercase italic tracking-tighter"
-             >
-               Global Stats
-             </button>
+      <header className="h-20 px-10 border-b border-slate-900 flex items-center justify-between shrink-0 bg-slate-950">
+          <div className="flex items-center gap-4">
+             <div className="p-2.5 bg-white rounded-xl text-slate-950 shadow-2xl">
+               <Globe size={18} />
+             </div>
+             <div>
+               <h2 className="text-sm font-black text-white uppercase tracking-[0.2em]">Infrastructure Rules</h2>
+               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-1">{webhooks.length} Active Endpoints</p>
+             </div>
           </div>
           <button 
-            onClick={() => {
-              fetchWebhooks();
-              if (onNotify) onNotify("Sycing endpoints...");
-            }}
-            className="px-3 py-1.5 bg-blue-600/10 text-blue-500 border border-blue-500/20 rounded text-[11px] font-bold uppercase tracking-tight hover:bg-blue-600/20 transition-all font-mono"
+            onClick={() => { fetchWebhooks(); if (onNotify) onNotify("Rules synchronized"); }}
+            className="p-3 text-slate-500 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-2xl transition-all border border-slate-800"
           >
-             Manual Sync
+             <RotateCcw size={16} />
           </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[rgba(11,14,20,0.5)]">
-        <div className="max-w-6xl mx-auto space-y-12">
+      <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+        <div className="max-w-6xl mx-auto space-y-16">
           
-          <section className="bg-[#11141b] border border-[#1e293b] rounded-xl p-8 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/10 transition-all" />
-            <h3 className="text-sm font-bold text-[#e2e8f0] mb-6 flex items-center gap-2 uppercase tracking-widest italic">
-              <Plus size={16} className="text-blue-500" /> Register Endpoint
-            </h3>
+          <section className="forge-card p-10 rounded-[2.5rem] relative overflow-hidden group">
+            <div className="flex items-center gap-6 mb-10">
+              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em] shrink-0">New Dispatch Rule</h3>
+              <div className="h-[1px] bg-slate-800 flex-1" />
+            </div>
+
             <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
-              <div className="md:col-span-6">
-                <label className="block text-[10px] font-black text-[#4a5568] uppercase tracking-widest mb-2 italic">Destination (HTTPS)</label>
+              <div className="md:col-span-8">
+                <label className="block text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3">Endpoint URL</label>
                 <input 
                   type="url" 
                   value={newUrl}
                   onChange={(e) => setNewUrl(e.target.value)}
-                  placeholder="https://api.yourdomain.com/webhooks"
-                  className="w-full bg-[#0b0e14] border border-[#1e293b] rounded-lg px-4 py-3 text-xs text-[#e2e8f0] focus:border-blue-500 outline-none transition-all focus:shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                  placeholder="https://api.acme.com/ingest"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-[1.5rem] px-6 py-4 text-sm text-white placeholder:text-slate-800 focus:border-white/20 outline-none transition-all font-mono"
                 />
               </div>
-              <div className="md:col-span-3">
-                <label className="block text-[10px] font-black text-[#4a5568] uppercase tracking-widest mb-2 italic">Blueprint</label>
-                <select 
-                  value={newBlueprint}
-                  onChange={(e) => setNewBlueprint(e.target.value)}
-                  className="w-full bg-[#0b0e14] border border-[#1e293b] rounded-lg px-4 py-3 text-xs text-[#e2e8f0] focus:border-blue-500 outline-none appearance-none"
-                >
-                  <option>JSON POST (Raw)</option>
-                  <option>Discord Event</option>
-                  <option>Slack Incoming</option>
-                  <option>Laravel Forge</option>
-                </select>
-              </div>
-              <div className="md:col-span-3 flex items-end">
-                <button type="submit" className="w-full h-[46px] bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-blue-900/40">
-                  Deploy Rule
-                </button>
+              <div className="md:col-span-4">
+                <label className="block text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3">Payload Architecture</label>
+                <div className="relative">
+                  <select 
+                    value={newBlueprint}
+                    onChange={(e) => setNewBlueprint(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-[1.5rem] px-6 py-4 text-sm text-white focus:border-white/20 outline-none appearance-none cursor-pointer font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    <option>Standard JSON</option>
+                    <option>Discord Webhook</option>
+                    <option>Slack Webhook</option>
+                    <option>Custom Blueprint</option>
+                  </select>
+                </div>
               </div>
               
-              <div className="md:col-span-12">
-                 <label className="block text-[10px] font-black text-[#4a5568] uppercase tracking-widest mb-2 italic">Subject Infiltration Pattern (Optional)</label>
-                 <div className="flex items-center gap-4 bg-[#11141b] rounded-lg border border-[#1e293b] p-1 pr-6">
-                    <input 
-                      type="text" 
-                      value={subjectFilter}
-                      onChange={(e) => setSubjectFilter(e.target.value)}
-                      placeholder="e.g. [URGENT] or /PAYMENT.*/"
-                      className="flex-1 bg-transparent border-none rounded px-4 py-2 text-xs text-blue-400 font-bold outline-none font-mono"
-                    />
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <div 
-                          onClick={() => setUseRegex(!useRegex)}
-                          className={`w-9 h-5 rounded-full transition-all relative ${useRegex ? 'bg-blue-600' : 'bg-[#1e293b]'}`}
-                        >
-                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${useRegex ? 'left-5' : 'left-1'}`} />
-                        </div>
-                        <span className="text-[10px] font-black text-[#4a5568] uppercase group-hover:text-[#718096] italic px-1">Logic Pattern</span>
-                      </label>
-                    </div>
-                 </div>
+              <div className="md:col-span-12 flex flex-col md:flex-row gap-8 items-end">
+                <div className="flex-1 w-full">
+                   <label className="block text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3">Filter Logic (Subject Match)</label>
+                   <div className="flex items-center gap-6 bg-slate-950 rounded-[1.5rem] border border-slate-800 p-2 pr-8 transition-within:border-white/20">
+                      <input 
+                        type="text" 
+                        value={subjectFilter}
+                        onChange={(e) => setSubjectFilter(e.target.value)}
+                        placeholder="e.g. Welcome or /Order #\\d+/"
+                        className="flex-1 bg-transparent border-none rounded-xl px-4 py-3 text-sm text-white font-black font-mono outline-none placeholder:text-slate-800"
+                      />
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                          <div 
+                            onClick={() => setUseRegex(!useRegex)}
+                            className={`w-10 h-5 rounded-full transition-all relative ${useRegex ? 'bg-white' : 'bg-slate-800'}`}
+                          >
+                            <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${useRegex ? 'left-6 bg-slate-950' : 'left-1 bg-slate-400'}`} />
+                          </div>
+                          <span className={`${useRegex ? 'text-white' : 'text-slate-600'} text-[9px] font-black uppercase tracking-widest transition-colors`}>REGEX</span>
+                        </label>
+                      </div>
+                   </div>
+                </div>
+                <button type="submit" className="forge-button-primary h-16 px-12 rounded-[1.5rem] text-[10px] font-black shadow-2xl active:scale-95 transition-all">
+                   ENABLE DISPATCH
+                </button>
               </div>
             </form>
           </section>
 
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xs font-black text-[#e2e8f0] uppercase tracking-widest italic border-l-4 border-blue-500 pl-4">Endpoint Registry <span className="ml-2 text-[#4a5568] opacity-50">/{webhooks.length} Active</span></h3>
+          <section className="space-y-6">
+            <div className="flex items-center gap-6 mb-8">
+              <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-[0.4em] shrink-0">Active Registry</h3>
+              <div className="h-[1px] bg-slate-900 flex-1" />
             </div>
             
-            <div className="bg-[#11141b] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl relative">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-[#0b0e14] border-b border-[#1e293b]">
+            <div className="forge-card rounded-[2.5rem] overflow-hidden border border-slate-900/50">
+              <table className="w-full text-left">
+                <thead className="bg-slate-950 border-b border-slate-900">
                   <tr>
-                    <th className="px-8 py-4 text-[9px] font-black text-[#4a5568] uppercase tracking-[0.2em] italic">Infiltration Target</th>
-                    <th className="px-8 py-4 text-[9px] font-black text-[#4a5568] uppercase tracking-[0.2em] italic">Telemetry</th>
-                    <th className="px-8 py-4 text-[9px] font-black text-[#4a5568] uppercase tracking-[0.2em] italic text-right">Operations</th>
+                    <th className="px-10 py-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Destination Infrastructure</th>
+                    <th className="px-10 py-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Telemetry</th>
+                    <th className="px-10 py-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] text-right">Control</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1e293b]">
+                <tbody className="divide-y divide-slate-900">
                   {webhooks.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-8 py-32 text-center text-[#4a5568] italic text-xs uppercase tracking-widest opacity-50 bg-[#0b0e14]/30">No active signal routers detected.</td>
+                      <td colSpan={3} className="px-10 py-32 text-center text-slate-800 uppercase text-[10px] font-black tracking-[0.5em]">No Active Dispatch Rules</td>
                     </tr>
                   ) : (
                     webhooks.map((hook) => (
-                      <tr key={hook.id} className="hover:bg-blue-600/[0.02] transition-colors group">
-                        <td className="px-8 py-6">
+                      <tr key={hook.id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="px-10 py-8">
                           <div className="flex flex-col gap-2">
-                            <span className="text-[11px] font-bold text-[#e2e8f0] truncate max-w-lg flex items-center gap-3">
-                               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-xs font-black text-white truncate max-w-lg flex items-center gap-4">
+                               <div className="w-1.5 h-1.5 rounded-full bg-white opacity-40" />
                                {hook.url}
-                               <span className="bg-blue-600/10 text-blue-500 text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest border border-blue-500/20">{hook.blueprint}</span>
+                               <span className="bg-white/5 text-slate-500 text-[8px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest border border-white/5">{hook.blueprint}</span>
                             </span>
                             {hook.filter_subject && (
-                              <div className="flex items-center gap-2 text-[10px] text-blue-400 font-mono italic px-5">
-                                <Filter size={10} /> {hook.use_regex ? 'RGX' : 'SUB'}: <span className="opacity-80">"{hook.filter_subject}"</span>
+                              <div className="flex items-center gap-3 text-[9px] text-slate-500 font-mono font-black pl-5">
+                                <Filter size={10} /> {hook.use_regex ? 'STRICT REGEX' : 'SUBSTRING'}: <span className="text-white">"{hook.filter_subject}"</span>
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="px-8 py-6">
-                           <div className="flex items-center gap-8">
+                        <td className="px-10 py-8">
+                           <div className="flex items-center gap-10">
                               <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-[#4a5568] uppercase tracking-widest mb-1 italic">Deliveries</span>
-                                <span className="text-xs font-bold text-[#e2e8f0] font-mono tracking-tighter">{hook.success_count}<span className="text-[#2d3748] mx-1">/</span>{hook.hits_count}</span>
+                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Pass-Through</span>
+                                <span className="text-xs font-mono text-white font-black">{hook.success_count}<span className="text-slate-800 mx-1">/</span>{hook.hits_count}</span>
                               </div>
                               {hook.last_error && (
                                 <div className="flex flex-col">
-                                  <span className="text-[8px] font-black text-red-500 uppercase tracking-widest mb-1 italic">Interruption</span>
-                                  <span className="text-[10px] text-red-400 font-bold truncate max-w-[150px] font-mono italic">{hook.last_error}</span>
+                                  <span className="text-[8px] font-black text-red-900 uppercase tracking-widest mb-1">Error</span>
+                                  <span className="text-[10px] text-red-500 font-mono font-black truncate max-w-[150px]">{hook.last_error}</span>
                                 </div>
                               )}
                            </div>
                         </td>
-                        <td className="px-8 py-6 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <td className="px-10 py-8 text-right">
+                          <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
                             <button 
                               onClick={() => setShowHistoryId(showHistoryId === hook.id ? null : hook.id)}
-                              className="p-2 hover:bg-blue-500/10 text-[#718096] hover:text-blue-500 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
-                              title="Telemetry Logs"
+                              className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-white rounded-xl transition-all border border-slate-800"
+                              title="History"
                             ><Activity size={14} /></button>
                             <button 
                               onClick={() => handleResetCounters(hook.id)}
-                              className="p-2 hover:bg-white/5 text-[#718096] rounded-lg transition-colors"
-                              title="Reset Telemetry"
+                              className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-white rounded-xl transition-all border border-slate-800"
+                              title="Reset"
                             ><RotateCcw size={14} className={isReseting === hook.id ? 'animate-spin' : ''} /></button>
                             <button 
                               onClick={() => handleTest(hook.url, hook.id, hook.blueprint)}
                               disabled={testingId === hook.id}
-                              className="p-2 hover:bg-blue-500/20 text-blue-500 rounded-lg transition-all border border-transparent hover:border-blue-500/40"
-                              title="Disptach Test Signal"
+                              className="p-3 bg-white hover:bg-slate-200 text-slate-950 rounded-xl transition-all shadow-xl shadow-white/5"
+                              title="Test Signal"
                             ><Play size={14} fill="currentColor" /></button>
                             <button 
                               onClick={() => handleDelete(hook.id)}
-                              className="p-2 hover:bg-red-500/10 text-red-500/80 hover:text-red-500 rounded-lg transition-colors"
-                              title="Decommission Endpoint"
+                              className="p-3 bg-slate-900 hover:bg-red-500/10 text-slate-600 hover:text-red-500 rounded-xl transition-all border border-slate-800 hover:border-red-500/20"
+                              title="Remove"
                             ><Trash2 size={14} /></button>
                           </div>
                         </td>
@@ -307,37 +305,46 @@ export default function WebhooksView({ onNotify }: WebhooksViewProps) {
           </section>
 
           {showHistoryId && (
-            <section className="bg-[#11141b] border border-[#1e293b] rounded-xl overflow-hidden animate-in slide-in-from-bottom-6 duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-               <header className="px-8 py-4 bg-[#0b0e14] border-b border-[#1e293b] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-                    <h4 className="text-xs font-black text-[#e2e8f0] uppercase tracking-[0.2em] italic">Telemetry Stream</h4>
+            <section className="forge-card rounded-[2.5rem] overflow-hidden animate-in slide-in-from-bottom-8 duration-500 shadow-2xl border-white/5">
+               <header className="px-10 py-8 border-b border-slate-900 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-white/5 rounded-lg text-white">
+                      <Activity size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Infrastructure Logs</h4>
+                      <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-1">Real-time Delivery Telemetry</p>
+                    </div>
                   </div>
-                  <button onClick={() => setShowHistoryId(null)} className="text-[#4a5568] hover:text-white transition-colors p-1">✕</button>
+                  <button onClick={() => setShowHistoryId(null)} className="p-3 bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-white rounded-xl transition-all">
+                    <X size={16} />
+                  </button>
                </header>
-               <div className="p-6 overflow-y-auto max-h-[400px] custom-scrollbar bg-[#0b0e14]/30">
+               <div className="p-10 overflow-y-auto max-h-[600px] custom-scrollbar bg-slate-950/20">
                   {logs.length === 0 ? (
-                    <p className="text-center py-24 text-[#4a5568] italic text-[10px] uppercase tracking-[0.3em] opacity-40">Zero telemetry signals intercepted.</p>
+                    <div className="py-32 text-center">
+                      <Cpu size={40} className="mx-auto text-slate-900 mb-6" />
+                      <p className="text-slate-800 uppercase text-[9px] font-black tracking-[0.5em]">No Delivery Data Found</p>
+                    </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="grid gap-4">
                        {logs.map(log => (
                          <div 
                            key={log.id}
                            onClick={() => setSelectedLogId(selectedLogId === log.id ? null : log.id)}
-                           className={`p-4 rounded-lg border transition-all ${selectedLogId === log.id ? 'bg-[#0b0e14] border-blue-500/50 shadow-lg' : 'bg-[#11141b] border-transparent hover:border-[#1e293b] hover:bg-[#11141b]/80'}`}
+                           className={`p-6 rounded-[1.5rem] border transition-all cursor-pointer ${selectedLogId === log.id ? 'bg-white/[0.03] border-white/20' : 'bg-slate-900 border-transparent hover:border-slate-800'}`}
                          >
-                            <div className="flex items-center justify-between mb-2">
-                               <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${log.status === 'success' ? 'bg-green-500/5 text-green-500 border-green-500/20' : 'bg-red-500/5 text-red-500 border-red-500/20'}`}>{log.status}</span>
-                               <span className="text-[10px] text-[#4a5568] font-mono">{new Date(log.created_at).toLocaleTimeString()}</span>
+                            <div className="flex items-center justify-between mb-4">
+                               <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-md border ${log.status === 'success' ? 'bg-white/5 text-white border-white/10' : 'bg-red-500/5 text-red-500 border-red-500/20'}`}>{log.status}</span>
+                               <span className="text-[9px] text-slate-600 font-mono font-black uppercase">{new Date(log.created_at).toLocaleTimeString()}</span>
                             </div>
-                            <p className="text-xs font-bold text-[#e2e8f0] truncate">{log.email_subject || 'Simulated Pulse Signal'}</p>
+                            <p className="text-xs font-black text-white uppercase tracking-wider">{log.email_subject || 'Infrastructure Test Signal'}</p>
                             {selectedLogId === log.id && (
-                              <div className="mt-4 p-4 bg-[#05070a] rounded-lg border border-[#1e293b] shadow-inner font-mono text-[10px] text-blue-400/80 leading-relaxed overflow-auto max-h-48 custom-scrollbar">
-                                 <div className="flex items-center gap-2 mb-3 border-b border-[#1e293b] pb-2">
-                                    <Terminal size={12} className="text-blue-500" />
-                                    <span className="font-black text-[#4a5568] uppercase tracking-widest">Payload Response</span>
+                              <div className="mt-6 p-8 bg-black rounded-2xl border border-slate-900 font-mono text-[12px] text-slate-400 leading-relaxed overflow-auto max-h-64 custom-scrollbar group relative">
+                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity">
+                                    <Terminal size={40} />
                                  </div>
-                                 <pre className="whitespace-pre-wrap">{log.payload || (log.error ? `FATAL: ${log.error}` : 'ACK: No response content.')}</pre>
+                                 <pre className="whitespace-pre-wrap relative z-10">{log.payload || (log.error ? `ERR_TRACE: ${log.error}` : 'SIG_OK: NULL_RESPONSE')}</pre>
                               </div>
                             )}
                          </div>

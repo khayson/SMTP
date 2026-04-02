@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Shield, Zap, Key, Server, X } from "lucide-react";
-
-interface RelaySettings {
-  host: string;
-  port: number;
-  username?: string;
-  password?: string;
-  encryption: string;
-}
+import { Shield, Key, X, Settings } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,47 +9,31 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [settings, setSettings] = useState<RelaySettings>({
-    host: "",
-    port: 25,
-    encryption: "none",
-  });
   const [smtpPort, setSmtpPort] = useState<number>(1025);
   const [licenseKey, setLicenseKey] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Load Relay Settings
-      invoke<RelaySettings | null>("get_relay_settings").then((data) => {
-        if (data) setSettings(data);
-      });
-      
-      // Load Studio Core Settings
-      const loadStudioSettings = async () => {
+      const loadSettings = async () => {
         try {
           const port = await invoke<string | null>("get_settings", { key: "smtp_port" });
           if (port) setSmtpPort(parseInt(port));
           const license = await invoke<string | null>("get_settings", { key: "license_key" });
           if (license) setLicenseKey(license);
         } catch (e) { 
-          console.error("Failed to load studio settings:", e); 
+          console.error("Failed to load settings:", e); 
         }
       };
-      loadStudioSettings();
+      loadSettings();
     }
   }, [isOpen]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Save Relay Configuration
-      await invoke("update_relay_settings", { settings });
-      
-      // Save Studio Core Configuration
       await invoke("update_settings", { key: "smtp_port", value: smtpPort.toString() });
       await invoke("update_settings", { key: "license_key", value: licenseKey });
-
       onClose();
     } catch (error) {
       alert("Failed to save settings: " + error);
@@ -68,136 +45,92 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="w-full max-w-lg bg-[#0b0e14] border border-[#1e293b] rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.1)] overflow-hidden flex flex-col animate-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-3xl p-6 animate-in fade-in duration-500">
+      <div className="w-full max-w-lg bg-slate-950 border border-slate-900 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in duration-500">
         
-        {/* Header */}
-        <div className="p-8 border-b border-[#1e293b] flex justify-between items-center bg-[#11141b]/50">
-          <div>
-            <h2 className="text-2xl font-black text-[#e2e8f0] uppercase tracking-tighter italic">Studio Precision</h2>
-            <p className="text-[10px] text-[#718096] uppercase font-bold tracking-[0.2em] opacity-60">Global Configuration Engine</p>
+        <div className="px-12 py-10 border-b border-slate-900 flex justify-between items-center bg-slate-950">
+          <div className="flex items-center gap-5">
+            <div className="p-3 bg-white rounded-2xl text-slate-950 shadow-2xl">
+              <Settings size={20} />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-white tracking-[0.2em] uppercase">Configuration</h2>
+              <p className="text-[9px] text-slate-600 uppercase font-black tracking-widest mt-1">ForgeMail v1.2.1 • Core Infrastructure</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all">
+          <button onClick={onClose} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all border border-slate-800">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
-          
-          {/* Relay Group */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap size={14} className="text-blue-500" />
-              <h3 className="text-[11px] font-black text-blue-500 uppercase tracking-[0.3em]">Relay Studio</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">SMTP Host</label>
-                <input 
-                  value={settings.host}
-                  onChange={(e) => setSettings({ ...settings, host: e.target.value })}
-                  placeholder="smtp.mailtrap.io"
-                  className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">Relay Port</label>
+        <div className="p-12 space-y-10 overflow-y-auto max-h-[70vh] custom-scrollbar">
+          <section className="space-y-10">
+            <div className="grid grid-cols-1 gap-10">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Network Environment (SMTP Port)</label>
+                <div className="relative group">
                   <input 
                     type="number"
-                    value={settings.port}
-                    onChange={(e) => setSettings({ ...settings, port: parseInt(e.target.value) })}
-                    className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all font-mono"
+                    value={smtpPort}
+                    onChange={(e) => setSmtpPort(parseInt(e.target.value))}
+                    placeholder="1025"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-sm text-white focus:border-white/20 transition-all font-mono outline-none shadow-inner"
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">Security</label>
-                  <select 
-                    value={settings.encryption}
-                    onChange={(e) => setSettings({ ...settings, encryption: e.target.value })}
-                    className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all cursor-pointer font-bold appearance-none"
-                  >
-                    <option value="none">PLAIN / NONE</option>
-                    <option value="starttls">STARTTLS</option>
-                    <option value="tls">TLS/SSL</option>
-                  </select>
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 p-2 bg-white/5 rounded-lg text-slate-700 pointer-events-none group-focus-within:text-white transition-colors">
+                    <Shield size={14} />
+                  </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">Auth User</label>
+              
+              <div className="space-y-4 relative">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Infrastructure License</label>
+                <div className="relative group">
                   <input 
-                    value={settings.username || ""}
-                    onChange={(e) => setSettings({ ...settings, username: e.target.value })}
-                    className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all"
+                    value={licenseKey}
+                    onChange={(e) => setLicenseKey(e.target.value)}
+                    placeholder="FORGE-XXXX-XXXX"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-sm text-white focus:border-white/20 transition-all uppercase tracking-[0.3em] font-black placeholder:tracking-normal outline-none shadow-inner"
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">Auth Pass</label>
-                  <input 
-                    type="password"
-                    value={settings.password || ""}
-                    onChange={(e) => setSettings({ ...settings, password: e.target.value })}
-                    className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all"
-                  />
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 p-2 bg-white/5 rounded-lg text-slate-700 pointer-events-none group-focus-within:text-white transition-colors">
+                    <Key size={14} />
+                  </div>
                 </div>
               </div>
             </div>
-          </section>
-
-          {/* Studio Core Group */}
-          <section className="space-y-6 pt-6 border-t border-[#1e293b]/50">
-            <div className="flex items-center gap-2 mb-4">
-              <Server size={14} className="text-blue-500" />
-              <h3 className="text-[11px] font-black text-blue-500 uppercase tracking-[0.3em]">Studio Core</h3>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">Listen Port</label>
-                <input 
-                  type="number"
-                  value={smtpPort}
-                  onChange={(e) => setSmtpPort(parseInt(e.target.value))}
-                  placeholder="1025"
-                  className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all font-mono"
-                />
+            
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] flex items-start gap-4">
+              <div className="p-2 bg-white text-slate-950 rounded-lg">
+                <Shield size={16} />
               </div>
-              <div className="space-y-1.5 relative">
-                <label className="text-xs font-bold text-[#4a5568] uppercase tracking-wider">Enterprise Key</label>
-                <input 
-                  value={licenseKey}
-                  onChange={(e) => setLicenseKey(e.target.value)}
-                  placeholder="PM-XXXX-XXXX"
-                  className="w-full bg-[#11141b] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-[#cbd5e0] focus:outline-none focus:border-blue-500 transition-all uppercase tracking-widest placeholder:tracking-normal"
-                />
-                <Key size={12} className="absolute right-4 top-[38px] opacity-20" />
-              </div>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-loose">
+                Crucial: Changes to infrastructure network parameters require an environment restart to take effect.
+              </p>
             </div>
-            <p className="text-[9px] text-[#4a5568] mt-2 italic flex items-center gap-2">
-              <Shield size={10} /> Requires studio restart to apply port binding changes.
-            </p>
           </section>
         </div>
 
-        {/* Footer */}
-        <div className="p-8 bg-[#11141b]/50 border-t border-[#1e293b] flex justify-end gap-4">
+        <div className="px-12 py-10 bg-slate-950 border-t border-slate-900 flex justify-between items-center">
           <button 
-            onClick={onClose}
-            className="px-6 py-3 text-[#718096] hover:text-[#e2e8f0] text-xs font-black uppercase tracking-widest transition-all"
+             onClick={() => openUrl('https://github.com/khayson/SMTP')}
+             className="text-[10px] font-black text-slate-700 uppercase tracking-widest hover:text-white transition-colors"
           >
-            Cancel
+            v1.2.1 Stable
           </button>
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-600/20 transition-all flex items-center gap-2"
-          >
-            {saving ? "Deploying..." : "Sync Studio"}
-          </button>
+          <div className="flex gap-4">
+            <button 
+              onClick={onClose}
+              className="px-8 py-4 text-slate-600 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="forge-button-primary px-10 py-4 rounded-2xl text-[10px] font-black shadow-2xl active:scale-95 transition-all outline-none"
+            >
+              {saving ? "REPLICATING..." : "COMMIT CHANGES"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

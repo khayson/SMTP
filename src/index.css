@@ -1,13 +1,14 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 400;
 
   color-scheme: dark;
-  color: #a0aec0;
-  background-color: #0b0e14;
+  color: #94a3b8; /* slate-400 */
+  background-color: #020617; /* slate-950 */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,78 +21,97 @@ body {
   display: flex;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #0b0e14;
+  background-color: #020617;
 }
 
-/* Mailtrap Scrollbar */
+/* ForgeMail Scrollbar - Ultra Minimalist */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #0b0e14;
+  background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #1e293b;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
 
-/* Flat Utility Components */
-.mailtrap-panel {
-  background: #0b0e14;
+/* Monochrome UI Components */
+.forge-panel {
+  background: #020617;
   border: 1px solid #1e293b;
 }
 
-.mailtrap-card {
-  background: #11141b;
+.forge-card {
+  background: #0f172a; /* slate-900 */
   border: 1px solid #1e293b;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.mailtrap-card:hover {
-  border-color: #334155;
+.forge-card:hover {
+  border-color: #475569;
+  background: #1e293b;
 }
 
-.mailtrap-input {
-  background: #11141b;
+.forge-input {
+  background: #0f172a;
   border: 1px solid #1e293b;
-  color: #e2e8f0;
+  color: #f1f5f9;
   outline: none;
   transition: all 0.2s ease;
 }
 
-.mailtrap-input:focus {
-  border-color: #3b82f6;
+.forge-input:focus {
+  border-color: #f1f5f9; /* White-ish focus for monochrome */
 }
 
-.mailtrap-button-primary {
-  background: #3b82f6;
-  color: #fff;
-  font-weight: 600;
+.forge-button-primary {
+  background: #f1f5f9;
+  color: #020617;
+  font-weight: 700;
   transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.mailtrap-button-primary:hover {
-  background: #2563eb;
+.forge-button-primary:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
 }
 
-.mailtrap-tab-active {
-  color: #e2e8f0;
-  border-bottom: 2px solid #3b82f6;
+.forge-tab-active {
+  color: #f1f5f9;
+  border-bottom: 2px solid #f1f5f9;
 }
 
-.mailtrap-tab-inactive {
-  color: #718096;
+.forge-tab-inactive {
+  color: #64748b;
 }
 
-.mailtrap-tab-inactive:hover {
-  color: #a0aec0;
+.forge-tab-inactive:hover {
+  color: #94a3b8;
 }
 
-/* Monospace Data Only */
-.data-mono {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+/* Premium Typography */
+.text-data {
+  font-family: 'JetBrains Mono', 'Geist Mono', 'Fira Code', monospace;
+  letter-spacing: -0.02em;
+}
+
+.tracking-premium {
+  letter-spacing: 0.05em;
+}
+
+/* Animation Utilities */
+@keyframes forge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-forge-pulse {
+  animation: forge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

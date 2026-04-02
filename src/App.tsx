@@ -6,10 +6,8 @@ import {
   Search,
   Trash2,
   RotateCcw,
-  FileText,
   Settings,
   HelpCircle,
-  ChevronRight,
   Zap,
   Copy,
   FolderOpen,
@@ -18,7 +16,10 @@ import {
   X,
   Check,
   ArrowLeft,
-  Menu
+  Menu,
+  Shield,
+  User,
+  Lock as LockIcon
 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { check } from "@tauri-apps/plugin-updater";
@@ -48,7 +49,7 @@ function App() {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [activeView, setActiveView] = useState<'inbox' | 'webhooks' | 'help'>('inbox');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'signals' | 'integration'>('signals');
+  const [activeTab, setActiveTab] = useState<'emails' | 'integration'>('emails');
   const [inspectorTab, setInspectorTab] = useState<'preview' | 'html' | 'text' | 'headers'>('preview');
   const [searchQuery, setSearchQuery] = useState("");
   const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: "", show: false });
@@ -145,7 +146,7 @@ function App() {
 
     // Check for onboarding
     const checkFirstRun = async () => {
-      const isFirstRun = localStorage.getItem('postmaster_onboarding_complete') !== 'true';
+      const isFirstRun = localStorage.getItem('forgemail_onboarding_complete') !== 'true';
       if (isFirstRun) setShowOnboarding(true);
     };
     checkFirstRun();
@@ -250,13 +251,13 @@ function App() {
     const p = project || 'app_unique_id';
     switch (tech) {
       case 'Laravel':
-        return `MAIL_MAILER=smtp\nMAIL_HOST=127.0.0.1\nMAIL_PORT=1025\nMAIL_USERNAME=${p}\nMAIL_PASSWORD=postmaster-pass\nMAIL_ENCRYPTION=null\nMAIL_FROM_ADDRESS="hello@example.com"\nMAIL_FROM_NAME="\${APP_NAME}"`;
+        return `MAIL_MAILER=smtp\nMAIL_HOST=127.0.0.1\nMAIL_PORT=1025\nMAIL_USERNAME=${p}\nMAIL_PASSWORD=forgemail-pass\nMAIL_ENCRYPTION=null\nMAIL_FROM_ADDRESS="hello@example.com"\nMAIL_FROM_NAME="\${APP_NAME}"`;
       case 'Flutter':
-        return `final smtpServer = SmtpServer('127.0.0.1', \n  port: 1025, \n  username: '${p}', \n  password: 'postmaster-safe', \n  ignoreBadCertificate: true\n);`;
+        return `final smtpServer = SmtpServer('127.0.0.1', \n  port: 1025, \n  username: '${p}', \n  password: 'forgemail-safe', \n  ignoreBadCertificate: true\n);`;
       case 'Express':
         return `const transport = nodemailer.createTransport({\n  host: "127.0.0.1",\n  port: 1025,\n  auth: { user: "${p}", pass: "any" }\n});`;
       case 'Python':
-        return `# Postmaster SMTP Isolation Config\nSMTP_HOST = "127.0.0.1"\nSMTP_PORT = 1025\nSMTP_USER = "${p}"\nSMTP_PASS = "any"`;
+        return `# ForgeMail SMTP Isolation Config\nSMTP_HOST = "127.0.0.1"\nSMTP_PORT = 1025\nSMTP_USER = "${p}"\nSMTP_PASS = "any"`;
       default: return '';
     }
   };
@@ -265,12 +266,12 @@ function App() {
   const isMasterView = !selectedEmail || !isSmallScreen;
 
   return (
-    <div className="flex h-screen w-screen bg-[#0b0e14] text-[#a0aec0] font-sans selection:bg-blue-500/30 overflow-hidden select-none">
+    <div className="flex h-screen w-screen bg-slate-950 text-slate-400 font-sans selection:bg-blue-500/30 overflow-hidden select-none">
       
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed top-4 right-4 z-50 bg-[#2563eb] text-white px-4 py-2 rounded shadow-2xl animate-in fade-in duration-300 text-xs font-semibold border border-white/10 uppercase tracking-widest italic leading-none flex items-center gap-2">
-          <Zap size={12} fill="currentColor" /> {toast.message}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-white text-slate-950 px-6 py-3 rounded-full shadow-2xl animate-in slide-in-from-bottom-4 duration-300 text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-slate-200">
+          <div className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" /> {toast.message}
         </div>
       )}
 
@@ -301,28 +302,35 @@ function App() {
         </div>
       )}
 
-      {/* Primary Sidebar (Fixed) */}
-      <aside className="w-16 bg-[#0b0e14] border-r border-[#1e293b] flex flex-col items-center py-6 gap-8 shrink-0 z-20">
-        <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-lg cursor-pointer shadow-lg shadow-blue-900/40" onClick={() => setActiveView('inbox')}>P</div>
+      {/* Primary Sidebar (Fixed Monochrome) */}
+      <aside className="w-16 bg-slate-950 border-r border-slate-900 flex flex-col items-center py-8 gap-10 shrink-0 z-20">
+        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-950 font-black text-xl cursor-pointer shadow-2xl shadow-white/5 transition-transform hover:scale-105 active:scale-95" onClick={() => setActiveView('inbox')}>F</div>
         
-        <nav className="flex-1 flex flex-col items-center gap-6">
+        <nav className="flex-1 flex flex-col items-center gap-8">
           <button 
             onClick={() => { setActiveView('inbox'); if (isSmallScreen) setIsSidebarOpen(false); }}
-            className={`p-2 rounded transition-colors ${activeView === 'inbox' ? 'text-blue-500 bg-blue-500/10' : 'text-[#718096] hover:text-[#a0aec0]'}`}
-          ><Inbox size={24} /></button>
+            className={`p-2 transition-all ${activeView === 'inbox' ? 'text-white' : 'text-slate-700 hover:text-slate-400'}`}
+            title="Inbox"
+          ><Inbox size={20} /></button>
           
           <button 
             onClick={() => { setActiveView('webhooks'); if (isSmallScreen) setIsSidebarOpen(false); }}
-            className={`p-2 rounded transition-colors ${activeView === 'webhooks' ? 'text-blue-500 bg-blue-500/10' : 'text-[#718096] hover:text-[#a0aec0]'}`}
-          ><ExternalLink size={24} /></button>
+            className={`p-2 transition-all ${activeView === 'webhooks' ? 'text-white' : 'text-slate-700 hover:text-slate-400'}`}
+            title="Webhooks"
+          ><ExternalLink size={20} /></button>
 
           <button 
             onClick={() => setIsSettingsOpen(true)}
-            className={`p-2 rounded transition-colors ${isSettingsOpen ? 'text-blue-500 bg-blue-500/10' : 'text-[#718096] hover:text-[#a0aec0]'}`}
-          ><Settings size={24} /></button>
+            className={`p-2 transition-all ${isSettingsOpen ? 'text-white' : 'text-slate-700 hover:text-slate-400'}`}
+            title="Settings"
+          ><Settings size={20} /></button>
         </nav>
 
-        <button onClick={() => setActiveView('help')} className={`p-2 rounded transition-colors ${activeView === 'help' ? 'text-blue-500 bg-blue-500/10' : 'text-[#718096] hover:text-[#a0aec0]'}`}><HelpCircle size={24} /></button>
+        <button 
+          onClick={() => setActiveView('help')} 
+          className={`p-2 transition-all ${activeView === 'help' ? 'text-white' : 'text-slate-700 hover:text-slate-400'}`}
+          title="Guide"
+        ><HelpCircle size={20} /></button>
       </aside>
 
       {/* Main Container */}
@@ -330,28 +338,36 @@ function App() {
         
         {/* Project/Inbox Sidebar (Collapsible) */}
         {activeView === 'inbox' && isSidebarOpen && (
-          <aside className={`w-56 bg-[#0b0e14] border-r border-[#1e293b] flex flex-col shrink-0 z-10 ${isSmallScreen ? 'absolute inset-y-0 left-16 shadow-2xl z-30' : ''}`}>
-            <div className="p-6 border-b border-[#1e293b] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FolderOpen size={14} className="text-blue-500" />
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-[#e2e8f0]">Isolated Inboxes</h2>
+          <aside className={`w-64 bg-slate-950 border-r border-slate-900 flex flex-col shrink-0 z-10 ${isSmallScreen ? 'absolute inset-y-0 left-16 shadow-2xl z-30' : ''}`}>
+            <div className="p-8 border-b border-slate-900 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FolderOpen size={14} className="text-white" />
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Projects</h2>
               </div>
-              <button onClick={() => setIsCreatingProject(!isCreatingProject)} className="p-1 hover:bg-white/5 rounded text-blue-500 transition-colors">
+              <button onClick={() => setIsCreatingProject(!isCreatingProject)} className="p-1.5 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all">
                 {isCreatingProject ? <X size={14} /> : <Plus size={14} />}
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1.5 custom-scrollbar">
               {isCreatingProject && (
-                <div className="px-2 pb-4 pt-1 flex flex-col gap-2 border-b border-[#1e293b]/50 mb-2">
-                  <input autoFocus type="text" placeholder="Username..." value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()} className="bg-[#11141b] border border-blue-500/30 rounded px-3 py-2 text-xs text-[#e2e8f0] outline-none focus:border-blue-500" />
-                  <button onClick={handleCreateProject} className="bg-blue-600/20 text-blue-500 py-1 rounded text-[10px] font-black uppercase border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-1"><Check size={10} /> Create</button>
+                <div className="px-3 pb-6 pt-2 flex flex-col gap-3 border-b border-slate-900 mb-4">
+                  <input autoFocus type="text" placeholder="Project name..." value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()} className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-white transition-all" />
+                  <button onClick={handleCreateProject} className="forge-button-primary py-3 rounded-xl text-[9px] flex items-center justify-center gap-2 shadow-xl shadow-white/5">Create Infrastructure</button>
                 </div>
               )}
 
               {projects.map(p => (
-                <button key={p} onClick={() => { setSelectedProject(p); if (isSmallScreen) setIsSidebarOpen(false); setSelectedEmail(null); }} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs transition-all ${selectedProject === p ? 'bg-blue-600/10 text-blue-500 border border-blue-500/20 font-bold' : 'text-[#718096] hover:bg-white/5 border border-transparent'}`}>
-                  <Mail size={14} /> {p}
+                <button 
+                  key={p} 
+                  onClick={() => { setSelectedProject(p); if (isSmallScreen) setIsSidebarOpen(false); setSelectedEmail(null); }} 
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs transition-all ${selectedProject === p ? 'bg-white/5 text-white border border-white/10 font-bold' : 'text-slate-500 hover:bg-white/[0.02] border border-transparent'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail size={14} className={selectedProject === p ? 'text-white' : 'text-slate-700'} /> 
+                    <span className="truncate max-w-[120px]">{p}</span>
+                  </div>
+                  {selectedProject === p && <div className="w-1 h-1 rounded-full bg-white animate-pulse" />}
                 </button>
               ))}
             </div>
@@ -360,44 +376,48 @@ function App() {
 
         <main className="flex-1 flex flex-col min-w-0 bg-[#0b0e14]">
           
-          {/* Dashboard Header / Breadcrumbs */}
-          <header className="h-14 border-b border-[#1e293b] px-6 flex items-center justify-between shrink-0 bg-[#0b0e14] z-10">
-            <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter italic overflow-hidden">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-1.5 hover:bg-white/5 rounded text-[#718096] transition-transform ${isSidebarOpen ? 'rotate-180' : ''}`}><Menu size={16} /></button>
+          {/* Global App Header / Breadcrumbs */}
+          <header className="h-16 border-b border-slate-900 px-8 flex items-center justify-between shrink-0 bg-slate-950 z-10">
+            <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] overflow-hidden">
+              <button 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className={`p-2 hover:bg-white/5 rounded-xl text-slate-600 transition-all ${isSidebarOpen ? 'rotate-180' : ''}`}
+                title="Toggle Sidebar"
+              ><Menu size={18} /></button>
               
-              <div className="flex items-center gap-2 truncate">
-                <span className="text-blue-500 hidden sm:inline">Postmaster</span>
-                <ChevronRight size={14} className="text-[#4a5568]" />
-                <span className="text-[#e2e8f0] px-2 py-0.5 bg-[#1e293b] rounded truncate max-w-[120px]">{selectedProject || 'INBOX'}</span>
-                {selectedEmail && (
-                  <>
-                    <ChevronRight size={14} className="text-[#4a5568]" />
-                    <span className="text-[#718096] truncate max-w-[150px]">{selectedEmail.subject}</span>
-                  </>
-                )}
+              <div className="flex items-center gap-4 truncate">
+                <span className="text-white">ForgeMail</span>
+                <div className="w-[1px] h-4 bg-slate-800" />
+                <div className="flex items-center gap-3">
+                  <FolderOpen size={14} className="text-slate-600" />
+                  <span className="text-slate-200 truncate max-w-[120px]">{selectedProject || 'DIRECT'}</span>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               {isSmallScreen && selectedEmail && (
-                <button onClick={() => setSelectedEmail(null)} className="flex items-center gap-2 px-3 py-1 bg-[#1e293b] hover:bg-[#2d3748] text-[#e2e8f0] rounded text-[10px] font-black uppercase border border-[#2d3748] transition-all"><ArrowLeft size={12} /> Back</button>
+                <button onClick={() => setSelectedEmail(null)} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-widest border border-white/5 transition-all"><ArrowLeft size={12} /> Back</button>
               )}
-              <div className="text-[9px] font-bold text-[#4a5568] uppercase tracking-[0.2em] hidden md:block">Isolated Node</div>
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-white animate-forge-pulse" />
+                <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.2em]">Live Infrastructure</span>
+              </div>
             </div>
           </header>
 
           {activeView === 'inbox' ? (
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="h-12 px-6 border-b border-[#1e293b] flex items-center justify-between shrink-0 bg-[#0b0e14]/50">
-                <div className="flex gap-8 h-full">
-                  <button onClick={() => setActiveTab('signals')} className={`h-full text-sm font-semibold transition-all px-1 flex items-center ${activeTab === 'signals' ? 'text-[#e2e8f0] border-b-2 border-blue-500' : 'text-[#718096] hover:text-[#a0aec0]'}`}>Signals <span className="ml-2 bg-[#1e293b] text-[#718096] px-1.5 py-0.5 rounded-full text-[10px]">{emails.length}</span></button>
-                  <button onClick={() => setActiveTab('integration')} className={`h-full text-sm font-semibold transition-all px-1 flex items-center ${activeTab === 'integration' ? 'text-[#e2e8f0] border-b-2 border-blue-500' : 'text-[#718096] hover:text-[#a0aec0]'}`}>Credentials</button>
+                <div className="flex gap-6 h-full">
+                  <button onClick={() => setActiveTab('emails')} className={`h-full text-sm font-semibold transition-all px-1 flex items-center ${activeTab === 'emails' ? 'text-slate-100 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-300'}`}>Emails <span className="ml-2 bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px]">{emails.length}</span></button>
+                  <button onClick={() => setActiveTab('integration')} className={`h-full text-sm font-semibold transition-all px-1 flex items-center ${activeTab === 'integration' ? 'text-slate-100 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-300'}`}>Setup Guide</button>
                 </div>
                 <div className="flex items-center gap-3">
-                  {activeTab === 'signals' && (
+                  {activeTab === 'emails' && (
                     <div className="relative hidden sm:block">
-                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a5568]" />
-                      <input type="text" placeholder="Filter..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-[#11141b] border border-[#1e293b] rounded py-1 pl-10 pr-4 text-xs w-48 focus:border-blue-500 outline-none" />
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <input type="text" placeholder="Search intercepted emails..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-lg py-1.5 pl-10 pr-4 text-xs w-56 focus:border-blue-500 outline-none" />
                     </div>
                   )}
                   <button onClick={markAllRead} className="p-1.5 hover:bg-white/5 rounded text-[#718096]" title="Mark All Read"><Check size={16} /></button>
@@ -407,25 +427,38 @@ function App() {
               </div>
 
               <div className="flex-1 flex overflow-hidden relative">
-                {activeTab === 'signals' ? (
+                {activeTab === 'emails' ? (
                   <>
-                    {/* Signal List (Responsive Master) */}
-                    <div className={`border-r border-[#1e293b] flex flex-col shrink-0 bg-[#0b0e14] transition-all duration-300 ${!isMasterView ? 'hidden' : 'w-full'}`} style={{ width: !isSmallScreen ? listWidth : '100%' }}>
+                    {/* Email List (Forge Dynamic Master) */}
+                    <div className={`border-r border-slate-900 flex flex-col shrink-0 bg-slate-950 transition-all duration-500 ${!isMasterView ? 'hidden' : 'w-full'}`} style={{ width: !isSmallScreen ? listWidth : '100%' }}>
                       <div className="flex-1 overflow-y-auto custom-scrollbar">
                         {filteredEmails.length === 0 ? (
-                          <div className="p-12 text-center opacity-40"><Mail size={48} className="mx-auto text-[#1e293b] mb-4" /><p className="text-[10px] font-black uppercase tracking-widest italic">Zero Interceptions</p></div>
+                          <div className="p-20 text-center opacity-20 flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-slate-900 rounded-[2rem] flex items-center justify-center text-slate-800 border border-slate-800"><Mail size={32} /></div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">Forge Empty</p>
+                          </div>
                         ) : (
-                          filteredEmails.map((email) => (
-                            <div key={email.id} onClick={() => handleSelectEmail(email)} className={`p-4 border-b border-[#1e293b] cursor-pointer transition-all relative ${selectedEmail?.id === email.id ? 'bg-[#11141b] border-l-2 border-l-blue-600 shadow-inner' : 'hover:bg-[#11141b]/50 border-l-2 border-l-transparent'}`}>
-                              {!email.is_read && <div className="absolute right-4 top-5 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />}
-                              <div className="flex justify-between items-start mb-1">
-                                <span className={`text-[10px] font-black uppercase tracking-tighter truncate max-w-[70%] italic ${!email.is_read ? 'text-white' : 'text-[#718096]'}`}>{email.sender}</span>
-                                <span className="text-[9px] text-[#4a5568] font-mono">{new Date(email.created_at).toLocaleTimeString()}</span>
+                          filteredEmails.map((email) => {
+                            const initials = email.sender.substring(0, 2).toUpperCase();
+                            return (
+                              <div key={email.id} onClick={() => handleSelectEmail(email)} className={`px-8 py-8 border-b border-slate-900 cursor-pointer transition-all relative ${selectedEmail?.id === email.id ? 'bg-white/[0.03] border-l-4 border-l-white' : 'hover:bg-white/[0.01] border-l-4 border-l-transparent'}`}>
+                                {!email.is_read && <div className="absolute right-8 top-10 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-pulse" />}
+                                <div className="flex items-center gap-4 mb-4">
+                                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:border-white/20">
+                                    {initials}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center mb-0.5 gap-3">
+                                      <span className={`text-[11px] font-black uppercase tracking-widest truncate ${!email.is_read ? 'text-white' : 'text-slate-500'}`}>{email.sender}</span>
+                                      <span className="text-[9px] text-slate-600 font-bold tracking-widest">{new Date(email.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                    <h3 className={`text-xs truncate ${!email.is_read ? 'font-bold text-slate-200' : 'font-medium text-slate-500'}`}>{email.subject || '(No Subject)'}</h3>
+                                  </div>
+                                </div>
+                                <p className="text-[10px] text-slate-700 truncate font-medium pl-14">To: {email.recipients}</p>
                               </div>
-                              <h3 className={`text-xs truncate ${!email.is_read ? 'font-black text-white' : 'font-bold text-[#e2e8f0]'}`}>{email.subject || '(No Subject)'}</h3>
-                              <p className="text-[10px] text-[#4a5568] mt-1 truncate font-mono opacity-60">RECV: {email.recipients}</p>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>
@@ -434,33 +467,47 @@ function App() {
                       <div onMouseDown={() => { isResizing.current = true; }} className="w-1.5 h-full cursor-col-resize absolute z-10 hover:bg-blue-600/50 transition-colors bg-transparent border-x border-[#1e293b]/10" style={{ left: (isSidebarOpen ? 56 + 16 : 16) + listWidth }} />
                     )}
 
-                    {/* Signal Content (Responsive Detail) */}
-                    <div className={`flex-1 flex flex-col overflow-hidden bg-[#0b0e14] min-w-0 ${isMasterView && isSmallScreen ? 'hidden' : ''}`}>
+                    {/* Email Content (Forge Document Detail) */}
+                    <div className={`flex-1 flex flex-col overflow-hidden bg-slate-950 min-w-0 ${isMasterView && isSmallScreen ? 'hidden' : ''}`}>
                       {selectedEmail ? (
                         <div className="flex-1 flex flex-col overflow-hidden h-full">
-                          <header className="px-8 py-6 flex flex-col gap-4 bg-[#0b0e14]/50 border-b border-[#1e293b]">
-                            <div className="flex justify-between items-start gap-4">
-                              <h2 className="text-xl md:text-2xl font-black text-[#e2e8f0] tracking-tight italic uppercase truncate">{selectedEmail.subject}</h2>
-                              <button onClick={() => copyToClipboard(selectedEmail.html_body || selectedEmail.text_body, "Captured!")} className="p-2 hover:bg-white/5 rounded-lg text-[#718096] border border-[#1e293b] shrink-0"><Copy size={16} /></button>
+                          <header className="px-12 py-10 flex flex-col gap-10 bg-slate-950 border-b border-slate-900">
+                            <div className="flex justify-between items-start gap-8">
+                               <div className="flex-1 min-w-0">
+                                 <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-4 leading-tight">{selectedEmail.subject || '(No Subject)'}</h2>
+                                 <div className="flex items-center gap-4">
+                                     <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500">
+                                        {selectedEmail.sender.substring(0, 2).toUpperCase()}
+                                     </div>
+                                     <div className="flex flex-col">
+                                        <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{selectedEmail.sender}</span>
+                                        <span className="text-[10px] text-slate-600 font-medium tracking-wide italic">Route: {selectedEmail.recipients}</span>
+                                     </div>
+                                 </div>
+                               </div>
+                               <div className="flex items-center gap-3 shrink-0">
+                                  <button onClick={() => copyToClipboard(selectedEmail.html_body || selectedEmail.text_body, "Forge Payload Copied")} className="p-3 bg-white/5 hover:bg-white text-slate-400 hover:text-slate-950 rounded-2xl border border-white/5 transition-all shadow-2xl"><Copy size={20} /></button>
+                               </div>
                             </div>
-                            <div className="flex gap-6 h-8 -mb-6">
-                              {[{ id: 'preview', label: 'Visual' }, { id: 'html', label: 'Source' }, { id: 'text', label: 'Text' }, { id: 'headers', label: 'Trace' }].map(tab => (
-                                <button key={tab.id} onClick={() => setInspectorTab(tab.id as any)} className={`h-full text-[10px] font-black uppercase tracking-[0.2em] px-1 transition-all ${inspectorTab === tab.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-[#718096] hover:text-[#e2e8f0]'}`}>{tab.label}</button>
+                            <div className="flex gap-10 h-10 -mb-10">
+                              {[{ id: 'preview', label: 'Visual' }, { id: 'html', label: 'Payload' }, { id: 'text', label: 'Raw' }, { id: 'headers', label: 'Envelope' }].map(tab => (
+                                <button key={tab.id} onClick={() => setInspectorTab(tab.id as any)} className={`h-full text-[10px] font-black uppercase tracking-[0.2em] px-1 transition-all ${inspectorTab === tab.id ? 'text-white border-b-2 border-white' : 'text-slate-700 hover:text-slate-400'}`}>{tab.label}</button>
                               ))}
                             </div>
                           </header>
 
-                          <div className={`flex-1 bg-white mx-0 sm:mx-8 my-4 sm:my-8 rounded-none sm:rounded-xl overflow-hidden flex flex-col border border-[#1e293b] shadow-2xl ${isSmallScreen ? 'm-0 rounded-none' : ''}`}>
+                          <div className={`flex-1 bg-[#fcfcfc] mx-0 sm:mx-12 my-6 sm:my-12 rounded-none sm:rounded-[2.5rem] overflow-hidden flex flex-col border border-slate-800 shadow-[0_40px_100px_rgba(0,0,0,0.5)] ${isSmallScreen ? 'm-0 rounded-none' : ''}`}>
                             {inspectorTab === 'preview' && (
                               <iframe 
+                                title="Forge Preview"
                                 className="w-full h-full border-none" 
                                 sandbox="allow-same-origin allow-popups"
-                                srcDoc={wrapHtmlWithLinkHandler(selectedEmail.html_body || `<pre style="padding:20px;font-family:monospace">${selectedEmail.text_body}</pre>`)} 
+                                srcDoc={wrapHtmlWithLinkHandler(selectedEmail.html_body || `<pre style="padding:80px;font-family:monospace;color:#0f172a;font-size:14px;line-height:1.8">${selectedEmail.text_body}</pre>`)} 
                               />
                             )}
                             {['html', 'text', 'headers'].includes(inspectorTab) && (
-                              <div className="flex-1 bg-[#0b0e14] p-8 overflow-auto font-mono text-[11px] leading-relaxed select-text">
-                                <pre className="whitespace-pre-wrap text-blue-400">
+                              <div className="flex-1 bg-slate-950 p-12 overflow-auto font-mono text-[13px] leading-loose select-text custom-scrollbar">
+                                <pre className="whitespace-pre-wrap text-slate-300 font-medium">
                                   {inspectorTab === 'html' ? selectedEmail.html_body : inspectorTab === 'text' ? selectedEmail.text_body : selectedEmail.raw_headers}
                                 </pre>
                               </div>
@@ -468,51 +515,68 @@ function App() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                          <FileText size={80} className="mb-6 opacity-5 text-blue-500" />
-                          <h2 className="text-[10px] font-black text-[#e2e8f0] uppercase tracking-[0.5em] opacity-20">Awaiting Selection</h2>
+                        <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
+                          <div className="w-24 h-24 bg-slate-900 rounded-[2.5rem] flex items-center justify-center mb-8 border border-slate-800 shadow-2xl relative group">
+                            <Mail size={40} className="text-slate-800 group-hover:scale-110 transition-transform" />
+                            <div className="absolute -inset-1 bg-white/5 rounded-[2.8rem] -z-10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <h2 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.6em]">Forge Isolation Active</h2>
                         </div>
                       )}
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-[rgba(11,14,20,0.5)]">
-                    <div className="max-w-4xl mx-auto space-y-12">
-                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                  <div className="flex-1 p-10 md:p-20 overflow-y-auto custom-scrollbar bg-slate-950">
+                    <div className="max-w-5xl mx-auto space-y-16">
+                      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b border-slate-900">
                         <div>
-                          <h2 className="text-3xl font-black text-[#e2e8f0] mb-3 uppercase tracking-tighter italic">Isolation Credentials</h2>
-                          <p className="text-xs text-[#718096] uppercase font-bold tracking-widest italic opacity-60">Tunnel: {selectedProject || 'Standalone'}</p>
+                          <h2 className="text-4xl font-black text-white tracking-tighter mb-4 leading-tight">Infrastructure Hub</h2>
+                          <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.3em] leading-none">Virtual Environment: {selectedProject || 'GLOBAL'}</p>
+                          </div>
                         </div>
-                        <div className="px-4 py-2 bg-blue-600/10 border border-blue-500/20 rounded-lg flex items-center gap-3 w-fit">
-                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" /><span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Listener: 1025</span>
+                        <div className="px-6 py-3 bg-white text-slate-950 rounded-2xl flex items-center gap-4 w-fit shadow-2xl shadow-white/10 transition-transform hover:scale-105 active:scale-95 cursor-default">
+                          <div className="w-2 h-2 rounded-full bg-slate-950 animate-pulse" />
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em]">Active Port: 1025</span>
                         </div>
                       </div>
 
-                      <div className="bg-[#11141b] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl overflow-x-auto">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[
-                          { label: 'Tunnel Host', value: '127.0.0.1' },
-                          { label: 'Tunnel Port', value: '1025' },
-                          { label: 'Inbox User', value: selectedProject || 'any-unique-id' },
-                          { label: 'Inbox Pass', value: 'postmaster-safe' },
-                          { label: 'Auth Method', value: 'LOGIN / PLAIN' }
-                        ].map((c, i) => (
-                          <div key={c.label} className={`flex items-center px-8 py-5 border-b border-[#1e293b] last:border-0 ${i % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.01]'}`}>
-                            <span className="w-32 md:w-40 text-[9px] uppercase font-black text-[#4a5568] tracking-widest shrink-0 italic">{c.label}</span>
-                            <span className="text-xs text-blue-400 font-mono font-bold truncate">{c.value}</span>
+                          { label: 'SMTP Host', value: '127.0.0.1', icon: <Zap size={14} /> },
+                          { label: 'Port', value: '1025', icon: <Settings size={14} /> },
+                          { label: 'Username', value: selectedProject || 'any', icon: <User size={14} /> },
+                          { label: 'Password', value: 'forgemail', icon: <LockIcon size={14} /> },
+                          { label: 'Encryption', value: 'NONE / TLS', icon: <Shield size={14} /> }
+                        ].map((c) => (
+                          <div key={c.label} className="forge-card p-8 rounded-[2rem] flex flex-col gap-6 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-opacity">{c.icon}</div>
+                            <span className="text-[9px] uppercase font-black text-slate-600 tracking-[0.3em]">{c.label}</span>
+                            <div className="flex items-center justify-between gap-4">
+                               <span className="text-sm text-white font-bold tracking-tight truncate">{c.value}</span>
+                               <button onClick={() => copyToClipboard(c.value, `Copied ${c.label}`)} className="p-2 hover:bg-white hover:text-slate-950 rounded-xl transition-all"><Copy size={14} /></button>
+                            </div>
                           </div>
                         ))}
                       </div>
 
-                      <div className="mt-16 pb-12">
-                        <h3 className="text-[11px] font-black text-[#e2e8f0] mb-6 uppercase tracking-widest italic border-l-4 border-blue-500 pl-4">Precision Handlers</h3>
-                        <div className="flex flex-wrap gap-2 mb-6">
+                      <div className="pt-10">
+                        <div className="flex items-center gap-6 mb-12">
+                          <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em] shrink-0">Integration Payload</h3>
+                          <div className="h-[1px] bg-slate-900 flex-1" />
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-4 mb-10">
                           {['Laravel', 'Flutter', 'Express', 'Python'].map(lang => (
-                            <button key={lang} onClick={() => setTechType(lang)} className={`px-4 md:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${techType === lang ? 'bg-blue-600 text-white border-blue-500 shadow-lg' : 'bg-[#11141b] text-[#718096] border-[#1e293b] hover:border-[#334155]'}`}>{lang}</button>
+                            <button key={lang} onClick={() => setTechType(lang)} className={`px-8 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${techType === lang ? 'bg-white text-slate-950 border-white shadow-2xl shadow-white/5' : 'bg-transparent text-slate-600 border-slate-900 hover:text-white hover:border-slate-700'}`}>{lang}</button>
                           ))}
                         </div>
-                        <div className="bg-[#0b0e14] border border-[#1e293b] rounded-xl p-6 md:p-8 font-mono text-[11px] text-blue-500/80 leading-relaxed group relative shadow-inner overflow-x-auto">
-                          <button className="absolute top-4 right-4 p-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-all border border-blue-400/30 flex items-center gap-2 shadow-lg" onClick={() => copyToClipboard(getFullConfigSnippet(techType, selectedProject), "Handlers copied!")}><Copy size={14} /><span className="text-[10px] font-black uppercase">Copy All</span></button>
-                          <pre className="whitespace-pre-wrap italic">
+                        
+                        <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-10 md:p-14 font-mono text-[13px] text-slate-300 leading-loose group relative shadow-2xl overflow-hidden min-h-[300px]">
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+                          <button className="absolute top-8 right-8 px-6 py-3 bg-white text-slate-950 rounded-2xl font-black text-[9px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all active:scale-95 shadow-2xl flex items-center gap-3" onClick={() => copyToClipboard(getFullConfigSnippet(techType, selectedProject), "Payload Captured")}><Copy size={14} /> Copy Code</button>
+                          <pre className="whitespace-pre-wrap relative z-10 custom-scrollbar">
                             {getFullConfigSnippet(techType, selectedProject)}
                           </pre>
                         </div>
@@ -525,40 +589,42 @@ function App() {
           ) : activeView === 'webhooks' ? (
             <WebhooksView onNotify={notify} />
           ) : (
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0b0e14] p-12">
-              <div className="max-w-4xl mx-auto space-y-12 pb-24">
-                <div className="border-l-4 border-blue-500 pl-6">
-                  <h2 className="text-4xl font-black text-[#e2e8f0] uppercase tracking-tighter italic mb-2">Quick Start Guide</h2>
-                  <p className="text-sm text-[#718096] uppercase font-bold tracking-[0.2em] opacity-60">Mastering the SMTP Studio</p>
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950 p-12 md:p-24">
+              <div className="max-w-5xl mx-auto space-y-20 pb-32">
+                <div className="text-center md:text-left">
+                  <h2 className="text-5xl font-black text-white tracking-tighter mb-6 leading-tight">Quick Start</h2>
+                  <div className="flex items-center gap-4 justify-center md:justify-start text-[10px] font-black text-slate-700 uppercase tracking-[0.4em]">
+                    <Zap size={14} className="text-white animate-pulse" /> Zero-Config Orchestration
+                  </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="bg-[#11141b] border border-[#1e293b] p-8 rounded-2xl shadow-2xl group hover:border-blue-500/30 transition-all">
-                    <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 border border-blue-500/20 group-hover:scale-110 transition-transform">
-                      <Zap size={24} />
+                <div className="grid md:grid-cols-2 gap-10">
+                  <div className="bg-slate-900 border border-slate-800 p-12 rounded-[2.5rem] shadow-2xl group hover:border-white/10 transition-all">
+                    <div className="w-16 h-16 bg-white rounded-[1.8rem] flex items-center justify-center text-slate-950 mb-10 shadow-2xl transition-transform hover:scale-110">
+                      <Zap size={32} />
                     </div>
-                    <h3 className="text-lg font-black text-[#e2e8f0] uppercase tracking-widest mb-4">Interception</h3>
-                    <p className="text-xs text-[#718096] leading-relaxed">Point your application to <span className="text-blue-400 font-mono">127.0.0.1:1025</span>. Any signal sent to this port will be captured instantly, regardless of the recipient.</p>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">Isolation</h3>
+                    <p className="text-[11px] text-slate-500 leading-loose font-medium">Capture all SMTP traffic instantly at <span className="text-white font-black">127.0.0.1:1025</span>. Perfect for local prototyping without external dependencies.</p>
                   </div>
                   
-                  <div className="bg-[#11141b] border border-[#1e293b] p-8 rounded-2xl shadow-2xl group hover:border-blue-500/30 transition-all">
-                    <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 border border-blue-500/20 group-hover:scale-110 transition-transform">
-                      <Inbox size={24} />
+                  <div className="bg-slate-900 border border-slate-800 p-12 rounded-[2.5rem] shadow-2xl group hover:border-white/10 transition-all">
+                    <div className="w-16 h-16 bg-white rounded-[1.8rem] flex items-center justify-center text-slate-950 mb-10 shadow-2xl transition-transform hover:scale-110">
+                      <FolderOpen size={32} />
                     </div>
-                    <h3 className="text-lg font-black text-[#e2e8f0] uppercase tracking-widest mb-4">Isolated Inboxes</h3>
-                    <p className="text-xs text-[#718096] leading-relaxed">Use different SMTP <span className="text-blue-400 font-mono">Usernames</span> to automatically route signals into separate project silos.</p>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6">Project Silos</h3>
+                    <p className="text-[11px] text-slate-500 leading-loose font-medium">Use unique <span className="text-white font-black">Usernames</span> to automatically route intercepted traffic into distinct infrastructure silos.</p>
                   </div>
                 </div>
 
-                <div className="bg-blue-600/5 border border-blue-500/20 p-8 rounded-2xl">
-                  <h3 className="text-[11px] font-black text-blue-500 uppercase tracking-[0.3em] mb-4">Support & Issues</h3>
-                  <p className="text-xs text-[#718096] leading-relaxed mb-6">Encountering an issue or have a feature request for KH STUDIOS? Visit the official repository to collaborate.</p>
-                  <button 
-                    onClick={() => openUrl('https://github.com/khayson/SMTP')}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20"
-                  >
-                    <ExternalLink size={14} /> Open Repository
-                  </button>
+                <div className="bg-white/5 border border-white/10 p-14 rounded-[3rem] relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                    <HelpCircle size={100} />
+                  </div>
+                  <h3 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-6 flex items-center gap-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" /> Developer Support
+                  </h3>
+                  <p className="text-[11px] text-slate-400 leading-loose font-medium mb-10 max-w-2xl">ForgeMail is high-performance infrastructure for professional developers. If you encounter anomalies or require technical escalation, please refer to the official documentation.</p>
+                  <button onClick={() => openUrl('https://github.com/khayson/SMTP')} className="forge-button-primary px-10 py-4 rounded-2xl text-[10px] font-black shadow-2xl outline-none">Open Repository</button>
                 </div>
               </div>
             </div>
@@ -569,26 +635,26 @@ function App() {
       {/* Settings Precision Modal */}
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
-      {/* Onboarding Modal */}
+      {/* Onboarding Modal (Forge Monochrome) */}
       {showOnboarding && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
-          <div className="w-full max-w-lg bg-[#0b0e14] border border-[#1e293b] rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(37,99,235,0.15)] flex flex-col animate-in zoom-in duration-500">
-            <div className="p-12 text-center">
-              <div className="w-24 h-24 bg-blue-600 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-blue-600/40 mb-10 rotate-3">P</div>
-              <h1 className="text-4xl font-black text-[#e2e8f0] uppercase tracking-tighter italic mb-4">Postmaster Studio</h1>
-              <p className="text-sm text-[#718096] mb-12 leading-relaxed italic">The premium, local-first SMTP catch-all engine for modern studio development.</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-3xl p-6">
+          <div className="w-full max-w-lg bg-slate-950 border border-slate-900 rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col animate-in zoom-in duration-700">
+            <div className="p-16 text-center">
+              <div className="w-24 h-24 bg-white rounded-[2.5rem] mx-auto flex items-center justify-center text-slate-950 text-5xl font-black shadow-2xl shadow-white/10 mb-10 border-4 border-white/5 transition-transform hover:scale-110 active:scale-95 cursor-default">F</div>
+              <h1 className="text-4xl font-black text-white tracking-tighter mb-4">ForgeMail</h1>
+              <p className="text-[11px] text-slate-500 mb-12 uppercase tracking-[0.3em] font-black leading-relaxed max-w-[280px] mx-auto opacity-60">High-Performance SMTP Orchestration</p>
               
               <div className="space-y-4">
                 <button 
-                  onClick={() => { localStorage.setItem('postmaster_onboarding_complete', 'true'); setShowOnboarding(false); }}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20"
+                  onClick={() => { localStorage.setItem('forgemail_onboarding_complete', 'true'); setShowOnboarding(false); }}
+                  className="w-full py-6 bg-white hover:bg-slate-200 text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-2xl active:scale-[0.98]"
                 >
-                  Enter Studio
+                  Initialize Forge
                 </button>
               </div>
             </div>
-            <div className="bg-[#11141b] p-4 text-center border-t border-[#1e293b]">
-              <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-widest italic opacity-50">Studio v1.2.0 • KH STUDIOS</span>
+            <div className="bg-slate-900/50 p-6 text-center border-t border-slate-900">
+              <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.4em]">Version 1.2.1 • Stable Infrastructure</span>
             </div>
           </div>
         </div>
