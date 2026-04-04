@@ -1,7 +1,12 @@
-# CHANGELOG
+## [1.2.2] - 2026-04-04 — *The Stability Patch*
 
-All notable changes to **ForgeMail** are documented in this file.  
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+### Fixed
+- **Real-time Signal Sync**: Restored the `new-email` event listener in the frontend. Intercepted signals now appear instantly in the feed without waiting for the 3-second poll.
+- **Project Creation Loop**: Resolved a potential infinite recursion bug in the project initialization logic for new users.
+- **Project ID Validation**: Added sanitization and non-empty checks for project IDs to prevent infrastructure creation failures.
+- **SMTP Protocol Robustness**: Improved the DATA termination logic in the Rust backend to handle multi-chunk transmissions from modern SMTP clients.
+- **Terminology Rebrand**: Completed the transition to ForgeMail branding in the SMTP server greeting and System Tray menu items.
+- **CSS Order Fix**: Resolved a build warning by correcting the `@import` rule order in `index.css`.
 
 ---
 

@@ -79,8 +79,16 @@ function App() {
       if (!selectedProject && data.length > 0) {
         setSelectedProject(data[0]);
       } else if (data.length === 0) {
-        await invoke("create_project", { id: 'default', name: 'Main Sandbox' });
-        fetchProjects();
+        // First-run initialization
+        try {
+          await invoke("create_project", { id: "default", name: "Main Sandbox" });
+          const refreshed = await invoke<string[]>("get_projects");
+          setProjects(refreshed);
+          setSelectedProject("default");
+        } catch (err) {
+          console.error("Critical: Initialization failed", err);
+          notify("Failed to initialize workspace.");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -152,16 +160,25 @@ function App() {
     checkFirstRun();
   }, []);
 
-  // Listen for SMTP Errors
+  // Listen for Live Events
   useEffect(() => {
-    const unlisten = listen<string>("smtp-error", (event) => {
+    const unlistenError = listen<string>("smtp-error", (event) => {
       setSmtpError(event.payload);
       console.error("SMTP Error received:", event.payload);
     });
+
+    const unlistenEmail = listen<Email>("new-email", (_event) => {
+      // Logic for live update
+      // But fetchEmails() is easier to ensure consistency.
+      fetchEmails();
+      fetchProjects(); // Also refresh projects in case it's a new ID
+    });
+
     return () => {
-      unlisten.then(f => f());
+      unlistenError.then(f => f());
+      unlistenEmail.then(f => f());
     };
-  }, []);
+  }, [selectedProject]); // Re-bind when project changes to have fresh context
 
   // External Link Interceptor for Iframes
   useEffect(() => {
@@ -219,15 +236,22 @@ function App() {
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return;
     const sanitizedId = newProjectName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    if (!sanitizedId) {
+      notify("Invalid characters. ID must contain alphanumeric characters.");
+      return;
+    }
+
     try {
       await invoke("create_project", { id: sanitizedId, name: newProjectName.trim() });
       setNewProjectName("");
       setIsCreatingProject(false);
-      fetchProjects();
+      await fetchProjects();
       setSelectedProject(sanitizedId);
       notify(`Inbox '${sanitizedId}' established.`);
     } catch (error) {
       console.error(error);
+      notify("Failed to establish infrastructure.");
     }
   };
 
@@ -654,7 +678,7 @@ function App() {
               </div>
             </div>
             <div className="bg-slate-900/50 p-6 text-center border-t border-slate-900">
-              <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.4em]">Version 1.2.1 • Stable Infrastructure</span>
+              <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.4em]">Version 1.2.2 • Stable Infrastructure</span>
             </div>
           </div>
         </div>

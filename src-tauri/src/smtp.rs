@@ -43,7 +43,7 @@ impl SmtpServer {
                 let mut project_id = "default".to_string();
                 let mut data_buffer = Vec::new();
                 
-                let _ = socket.write_all(b"220 Postmaster Desktop ESMTP\r\n").await;
+                let _ = socket.write_all(b"220 ForgeMail ESMTP Ready\r\n").await;
                 
                 loop {
                     let n = match socket.read(&mut buffer).await {
@@ -56,7 +56,10 @@ impl SmtpServer {
                     
                     if let SmtpState::Data = state {
                         data_buffer.extend_from_slice(&buffer[..n]);
-                        if data_buffer.ends_with(b"\r\n.\r\n") || data_buffer.starts_with(b".\r\n") {
+                        
+                        // Robust EOD (End of Data) detection: \r\n.\r\n
+                        // We check the end of the buffer. Some clients might send it in small chunks.
+                        if data_buffer.ends_with(b"\r\n.\r\n") || data_buffer == b".\r\n" {
                             // Process Email
                             if let Some(message) = MessageParser::default().parse(&data_buffer) {
                                 let mut email = crate::db::Email {
@@ -94,8 +97,8 @@ impl SmtpServer {
                                         use tauri_plugin_notification::NotificationExt;
                                         let _ = app_handle_clone.notification()
                                             .builder()
-                                            .title("Postmaster: New Signal")
-                                            .body(format!("Project: {}\nSub: {}", project_id_copy, subject_copy))
+                                            .title("ForgeMail: New Signal")
+                                            .body(format!("Inbox: {}\nSub: {}", project_id_copy, subject_copy))
                                             .show();
                                     });
                                 }
@@ -117,7 +120,7 @@ impl SmtpServer {
                         match state {
                             SmtpState::Command => {
                                 if upper_cmd.starts_with("EHLO") || upper_cmd.starts_with("HELO") {
-                                    let _ = socket.write_all(b"250-Postmaster\r\n250-AUTH LOGIN PLAIN\r\n250-SIZE 15728640\r\n250 OK\r\n").await;
+                                    let _ = socket.write_all(b"250-ForgeMail-Engine\r\n250-AUTH LOGIN PLAIN\r\n250-SIZE 15728640\r\n250 OK\r\n").await;
                                 } else if upper_cmd.starts_with("AUTH LOGIN") {
                                     let _ = socket.write_all(b"334 VXNlcm5hbWU6\r\n").await; // "Username:"
                                     state = SmtpState::AuthUser;

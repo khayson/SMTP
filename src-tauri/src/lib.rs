@@ -272,8 +272,8 @@ pub fn run() {
         }))
         .setup(|app| {
             // V1.2: System Tray Initialization
-            let show_item = MenuItem::with_id(app, "show", "Show Studio", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit Postmaster", true, None::<&str>)?;
+            let show_item = MenuItem::with_id(app, "show", "Show Forge Studio", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit ForgeMail", true, None::<&str>)?;
             let tray_menu = Menu::with_items(app, &[&show_item, &quit_item])?;
 
             let _tray = TrayIconBuilder::new()
