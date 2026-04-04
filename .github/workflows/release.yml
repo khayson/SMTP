@@ -1,4 +1,4 @@
-name: Release Postmaster
+name: Release ForgeMail
 on:
   push:
     tags:
@@ -36,8 +36,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: 'Postmaster SMTP v__VERSION__'
-          releaseBody: 'See the assets below to download and install this version.'
-          releaseDraft: true
+          releaseName: 'ForgeMail v__VERSION__ — Stable Infrastructure'
+          releaseBody: 'See the artifacts below for the latest ForgeMail stable delivery engine.'
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
