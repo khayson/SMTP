@@ -15,6 +15,8 @@ pub struct Email {
     pub project_id: String,
     pub created_at: String,
     pub is_read: bool,
+    pub is_starred: bool,
+    pub folder: String, // 'inbox', 'trash', 'spam', 'archive', etc.
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -73,6 +75,8 @@ pub fn init_db(path: &Path) -> Result<(), rusqlite::Error> {
             raw_source TEXT,
             project_id TEXT,
             is_read INTEGER DEFAULT 0,
+            is_starred INTEGER DEFAULT 0,
+            folder TEXT DEFAULT 'inbox',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )",
         [],
@@ -156,6 +160,25 @@ pub fn init_db(path: &Path) -> Result<(), rusqlite::Error> {
     if !email_columns.contains(&"is_read".to_string()) {
         conn.execute("ALTER TABLE emails ADD COLUMN is_read INTEGER DEFAULT 0", [])?;
     }
+    if !email_columns.contains(&"is_starred".to_string()) {
+        conn.execute("ALTER TABLE emails ADD COLUMN is_starred INTEGER DEFAULT 0", [])?;
+    }
+    if !email_columns.contains(&"folder".to_string()) {
+        conn.execute("ALTER TABLE emails ADD COLUMN folder TEXT DEFAULT 'inbox'", [])?;
+    }
+
+    // Projects Migrations
+    let mut stmt_projects = conn.prepare("PRAGMA table_info(projects)")?;
+    let proj_columns: Vec<String> = stmt_projects.query_map([], |row| row.get(1))?.collect::<Result<Vec<_>, _>>()?;
+    if !proj_columns.contains(&"webhook_url".to_string()) {
+        conn.execute("ALTER TABLE projects ADD COLUMN webhook_url TEXT", [])?;
+    }
+    if !proj_columns.contains(&"description".to_string()) {
+        conn.execute("ALTER TABLE projects ADD COLUMN description TEXT", [])?;
+    }
+
+    // V1.3.0 Stability Patch: Force 'inbox' for any orphaned NULL folders
+    conn.execute("UPDATE emails SET folder = 'inbox' WHERE folder IS NULL", [])?;
 
     Ok(())
 }
@@ -163,8 +186,8 @@ pub fn init_db(path: &Path) -> Result<(), rusqlite::Error> {
 pub fn save_email(path: &Path, email: &Email) -> Result<i64, rusqlite::Error> {
     let conn = Connection::open(path)?;
     conn.execute(
-        "INSERT INTO emails (message_id, sender, recipients, subject, html_body, text_body, raw_source, project_id, is_read)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        "INSERT INTO emails (message_id, sender, recipients, subject, html_body, text_body, raw_source, project_id, is_read, is_starred, folder)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         params![
             email.message_id,
             email.sender,
@@ -175,6 +198,8 @@ pub fn save_email(path: &Path, email: &Email) -> Result<i64, rusqlite::Error> {
             email.raw_source,
             email.project_id,
             if email.is_read { 1 } else { 0 },
+            if email.is_starred { 1 } else { 0 },
+            email.folder,
         ],
     )?;
     Ok(conn.last_insert_rowid())
@@ -183,7 +208,7 @@ pub fn save_email(path: &Path, email: &Email) -> Result<i64, rusqlite::Error> {
 pub fn get_email_by_id(path: &Path, id: i64) -> Result<Email, rusqlite::Error> {
     let conn = Connection::open(path)?;
     conn.query_row(
-        "SELECT id, message_id, sender, recipients, subject, html_body, text_body, raw_source, project_id, created_at, is_read FROM emails WHERE id = ?1",
+        "SELECT id, message_id, sender, recipients, subject, html_body, text_body, raw_source, project_id, created_at, is_read, is_starred, folder FROM emails WHERE id = ?1",
         params![id],
         |row| {
             Ok(Email {
@@ -198,6 +223,8 @@ pub fn get_email_by_id(path: &Path, id: i64) -> Result<Email, rusqlite::Error> {
                 project_id: row.get(8)?,
                 created_at: row.get(9)?,
                 is_read: row.get::<_, i64>(10)? != 0,
+                is_starred: row.get::<_, i64>(11)? != 0,
+                folder: row.get(12)?,
             })
         },
     )
@@ -211,13 +238,44 @@ pub fn mark_as_read(path: &Path, id: i64) -> Result<(), rusqlite::Error> {
 
 pub fn mark_all_as_read(path: &Path, project_id: &str) -> Result<(), rusqlite::Error> {
     let conn = Connection::open(path)?;
-    conn.execute("UPDATE emails SET is_read = 1 WHERE project_id = ?1", params![project_id])?;
+    if project_id.is_empty() {
+        conn.execute("UPDATE emails SET is_read = 1", [])?;
+    } else {
+        conn.execute("UPDATE emails SET is_read = 1 WHERE project_id = ?1", params![project_id])?;
+    }
+    Ok(())
+}
+
+pub fn create_project(path: &Path, name: &str, id: &str, webhook: Option<&str>, desc: Option<&str>) -> Result<(), rusqlite::Error> {
+    let conn = Connection::open(path)?;
+    conn.execute(
+        "INSERT OR REPLACE INTO projects (name, id, webhook_url, description) VALUES (?1, ?2, ?3, ?4)",
+        params![name, id, webhook, desc],
+    )?;
     Ok(())
 }
 
 pub fn delete_email(path: &Path, id: i64) -> Result<(), rusqlite::Error> {
     let conn = Connection::open(path)?;
     conn.execute("DELETE FROM emails WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+pub fn toggle_star(path: &Path, id: i64) -> Result<(), rusqlite::Error> {
+    let conn = Connection::open(path)?;
+    conn.execute("UPDATE emails SET is_starred = 1 - is_starred WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+pub fn move_to_trash(path: &Path, id: i64) -> Result<(), rusqlite::Error> {
+    let conn = Connection::open(path)?;
+    conn.execute("UPDATE emails SET folder = 'trash' WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+pub fn restore_email(path: &Path, id: i64) -> Result<(), rusqlite::Error> {
+    let conn = Connection::open(path)?;
+    conn.execute("UPDATE emails SET folder = 'inbox' WHERE id = ?1", params![id])?;
     Ok(())
 }
 
@@ -375,26 +433,48 @@ pub fn get_webhook_log_by_id(path: &Path, id: i64) -> Result<WebhookLog, rusqlit
     )
 }
 
-pub fn get_emails(path: &Path, project_id: Option<String>) -> Result<Vec<Email>, rusqlite::Error> {
+pub fn get_emails(path: &Path, project_id: Option<String>, folder: Option<String>) -> Result<Vec<Email>, rusqlite::Error> {
     let conn = Connection::open(path)?;
-    let mut query = "SELECT id, message_id, sender, recipients, subject, html_body, text_body, raw_source, project_id, created_at, is_read FROM emails".to_string();
+    let mut query = "SELECT id, message_id, sender, recipients, subject, html_body, text_body, raw_source, project_id, created_at, is_read, is_starred, folder FROM emails".to_string();
     
-    let mut params_vec: Vec<String> = Vec::new();
+    let mut conditions = Vec::new();
+    let mut params_vals = Vec::new();
+
     if let Some(pid) = project_id {
-        query.push_str(" WHERE project_id = ?1");
-        params_vec.push(pid);
+        conditions.push("project_id = ?");
+        params_vals.push(pid);
+    }
+
+    if let Some(f) = folder {
+        if f == "starred" {
+            conditions.push("is_starred = 1");
+        } else {
+            conditions.push("folder = ?");
+            params_vals.push(f);
+        }
+    }
+
+    if !conditions.is_empty() {
+        query.push_str(" WHERE ");
+        query.push_str(&conditions.join(" AND "));
     }
     
     query.push_str(" ORDER BY id DESC");
     
     let mut stmt = conn.prepare(&query)?;
-    let mut rows = if params_vec.is_empty() {
+    
+    // We need to convert params_vals to a slice of trait objects. This is a bit tricky with rusqlite.
+    // For now, let's use a simpler approach if params are few.
+    let mut emails = Vec::new();
+
+    let mut rows = if params_vals.is_empty() {
         stmt.query([])?
+    } else if params_vals.len() == 1 {
+        stmt.query(params![params_vals[0]])?
     } else {
-        stmt.query(params![params_vec[0]])?
+        stmt.query(params![params_vals[0], params_vals[1]])?
     };
 
-    let mut emails = Vec::new();
     while let Some(row) = rows.next()? {
         emails.push(Email {
             id: row.get(0)?,
@@ -408,9 +488,28 @@ pub fn get_emails(path: &Path, project_id: Option<String>) -> Result<Vec<Email>,
             project_id: row.get(8)?,
             created_at: row.get(9)?,
             is_read: row.get::<_, i64>(10)? != 0,
+            is_starred: row.get::<_, i64>(11)? != 0,
+            folder: row.get(12)?,
         });
     }
     Ok(emails)
+}
+
+pub fn get_favorite_senders(path: &Path) -> Result<Vec<(String, String)>, rusqlite::Error> {
+    let conn = Connection::open(path)?;
+    let mut stmt = conn.prepare("
+        SELECT sender, COUNT(*) as count 
+        FROM emails 
+        GROUP BY sender 
+        ORDER BY count DESC 
+        LIMIT 5
+    ")?;
+    let mut rows = stmt.query([])?;
+    let mut senders = Vec::new();
+    while let Some(row) = rows.next()? {
+        senders.push((row.get(0)?, "Frequent Contact".to_string()));
+    }
+    Ok(senders)
 }
 
 pub fn get_projects(path: &Path) -> Result<Vec<String>, rusqlite::Error> {
@@ -430,14 +529,6 @@ pub fn get_projects(path: &Path) -> Result<Vec<String>, rusqlite::Error> {
     Ok(projects)
 }
 
-pub fn create_project(path: &Path, id: &str, name: &str) -> Result<(), rusqlite::Error> {
-    let conn = Connection::open(path)?;
-    conn.execute(
-        "INSERT INTO projects (id, name) VALUES (?1, ?2) ON CONFLICT(id) DO UPDATE SET name = EXCLUDED.name",
-        params![id, name],
-    )?;
-    Ok(())
-}
 
 pub fn increment_webhook_hit(path: &Path, id: i64) -> Result<(), rusqlite::Error> {
     let conn = Connection::open(path)?;

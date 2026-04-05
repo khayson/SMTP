@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Shield, Key, X, Settings } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { Shield, Key, X, Settings, RefreshCw } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,6 +11,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [smtpPort, setSmtpPort] = useState<number>(1025);
   const [licenseKey, setLicenseKey] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +30,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -45,92 +56,79 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-3xl p-6 animate-in fade-in duration-500">
-      <div className="w-full max-w-lg bg-slate-950 border border-slate-900 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col animate-in zoom-in duration-500">
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[#050505]/40 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
+      <div ref={modalRef} className="w-full max-w-lg max-h-[90vh] bg-white border border-[#E4E6EB] rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
         
-        <div className="px-12 py-10 border-b border-slate-900 flex justify-between items-center bg-slate-950">
-          <div className="flex items-center gap-5">
-            <div className="p-3 bg-white rounded-2xl text-slate-950 shadow-2xl">
-              <Settings size={20} />
+        {/* Header */}
+        <div className="px-6 sm:px-10 py-5 sm:py-8 border-b border-[#E4E6EB] flex justify-between items-center bg-white shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#F0F2F5] rounded-2xl flex items-center justify-center text-[#1877F2] shadow-sm">
+              <Settings size={20} className="sm:w-[22px]" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-white tracking-[0.2em] uppercase">Configuration</h2>
-              <p className="text-[9px] text-slate-600 uppercase font-black tracking-widest mt-1">ForgeMail v1.2.1 • Core Infrastructure</p>
+              <h2 className="text-[16px] sm:text-[18px] font-extrabold text-[#050505] tracking-tight">Studio settings</h2>
+              <p className="text-[11px] sm:text-[12px] text-[#65676B] font-bold uppercase tracking-widest mt-0.5">Version 1.2.7 Flagship</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all border border-slate-800">
-            <X size={20} />
+          <button onClick={onClose} className="p-2 hover:bg-[#F0F2F5] rounded-full text-[#65676B] transition-all">
+            <X size={18} className="sm:w-5" />
           </button>
         </div>
 
-        <div className="p-12 space-y-10 overflow-y-auto max-h-[70vh] custom-scrollbar">
-          <section className="space-y-10">
-            <div className="grid grid-cols-1 gap-10">
-              <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Network Environment (SMTP Port)</label>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-6 sm:p-10 space-y-6 sm:space-y-8">
+            <div className="space-y-5 sm:space-y-6">
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="text-[12px] sm:text-[13px] font-bold text-[#050505] ml-1">Incoming SMTP port</label>
                 <div className="relative group">
                   <input 
                     type="number"
                     value={smtpPort}
                     onChange={(e) => setSmtpPort(parseInt(e.target.value))}
-                    placeholder="1025"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-sm text-white focus:border-white/20 transition-all font-mono outline-none shadow-inner"
+                    className="w-full bg-[#F0F2F5] border border-transparent rounded-xl sm:rounded-2xl px-5 sm:px-6 py-3.5 sm:py-4 text-[14px] sm:text-[15px] text-[#050505] focus:bg-white focus:border-[#1877F2] transition-all font-bold outline-none shadow-inner"
                   />
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 p-2 bg-white/5 rounded-lg text-slate-700 pointer-events-none group-focus-within:text-white transition-colors">
-                    <Shield size={14} />
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 text-[#65676B] group-focus-within:text-[#1877F2] transition-colors">
+                    <Shield size={16} className="sm:w-[18px]" />
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-4 relative">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Infrastructure License</label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="text-[12px] sm:text-[13px] font-bold text-[#050505] ml-1">Studio license key</label>
                 <div className="relative group">
                   <input 
                     value={licenseKey}
                     onChange={(e) => setLicenseKey(e.target.value)}
-                    placeholder="FORGE-XXXX-XXXX"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-5 text-sm text-white focus:border-white/20 transition-all uppercase tracking-[0.3em] font-black placeholder:tracking-normal outline-none shadow-inner"
+                    placeholder="STUDIO-XXXX-XXXX"
+                    className="w-full bg-[#F0F2F5] border border-transparent rounded-xl sm:rounded-2xl px-5 sm:px-6 py-3.5 sm:py-4 text-[14px] sm:text-[15px] text-[#050505] focus:bg-white focus:border-[#1877F2] transition-all uppercase font-black outline-none shadow-inner placeholder:text-[#65676B]/40"
                   />
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 p-2 bg-white/5 rounded-lg text-slate-700 pointer-events-none group-focus-within:text-white transition-colors">
-                    <Key size={14} />
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 text-[#65676B] group-focus-within:text-[#1877F2] transition-colors">
+                    <Key size={16} className="sm:w-[18px]" />
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] flex items-start gap-4">
-              <div className="p-2 bg-white text-slate-950 rounded-lg">
-                <Shield size={16} />
-              </div>
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-loose">
-                Crucial: Changes to infrastructure network parameters require an environment restart to take effect.
+            <div className="bg-blue-50 border border-blue-100 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-3xl flex items-start gap-3 sm:gap-4">
+              <RefreshCw size={16} className="text-[#1877F2] mt-1 shrink-0 sm:w-[18px]" />
+              <p className="text-[12px] sm:text-[13px] text-[#1877F2] font-semibold leading-relaxed">
+                Note: Changing core ports requires an application reload to bind server listeners.
               </p>
             </div>
-          </section>
+          </div>
         </div>
 
-        <div className="px-12 py-10 bg-slate-950 border-t border-slate-900 flex justify-between items-center">
+        {/* Footer */}
+        <div className="px-6 sm:px-10 py-5 sm:py-8 bg-[#F0F2F5] border-t border-[#E4E6EB] flex justify-end items-center gap-3 sm:gap-4 shrink-0">
+          <button onClick={onClose} className="px-5 py-2.5 text-[#65676B] hover:text-[#050505] text-[13px] sm:text-[14px] font-bold transition-all">Cancel</button>
           <button 
-             onClick={() => openUrl('https://github.com/khayson/SMTP')}
-             className="text-[10px] font-black text-slate-700 uppercase tracking-widest hover:text-white transition-colors"
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-[#1877F2] text-white px-6 sm:px-8 py-3 rounded-full text-[13px] sm:text-[14px] font-bold shadow-lg shadow-[#1877F2]/20 hover:bg-[#166fe5] active:scale-95 transition-all disabled:opacity-50"
           >
-            v1.2.1 Stable
+            {saving ? "SAVING..." : "Apply changes"}
           </button>
-          <div className="flex gap-4">
-            <button 
-              onClick={onClose}
-              className="px-8 py-4 text-slate-600 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={handleSave}
-              disabled={saving}
-              className="forge-button-primary px-10 py-4 rounded-2xl text-[10px] font-black shadow-2xl active:scale-95 transition-all outline-none"
-            >
-              {saving ? "REPLICATING..." : "COMMIT CHANGES"}
-            </button>
-          </div>
         </div>
       </div>
     </div>

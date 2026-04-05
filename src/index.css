@@ -3,12 +3,17 @@
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  line-height: 1.6;
+  line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: #94a3b8; /* slate-400 */
-  background-color: #020617; /* slate-950 */
+  color-scheme: light;
+  color: #050505;
+  background-color: #FFFFFF;
+
+  --primary: #1877F2;
+  --secondary: #F0F2F5;
+  --border: #E4E6EB;
+  --muted: #65676B;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -21,97 +26,131 @@ body {
   display: flex;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #020617;
+  background-color: #FFFFFF;
 }
 
-/* ForgeMail Scrollbar - Ultra Minimalist */
+/* ForgeMail Scrollbar - Clean Modern */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  width: 6px;
+  height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #BCC0C4;
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #8D949E;
 }
 
-/* Monochrome UI Components */
+/* Premium UI Components */
 .forge-panel {
-  background: #020617;
-  border: 1px solid #1e293b;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
 }
 
 .forge-card {
-  background: #0f172a; /* slate-900 */
-  border: 1px solid #1e293b;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
 .forge-card:hover {
-  border-color: #475569;
-  background: #1e293b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .forge-input {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  color: #f1f5f9;
+  background: #F0F2F5;
+  border: 1px solid transparent;
+  color: #050505;
+  border-radius: 6px;
+  padding: 8px 12px;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .forge-input:focus {
-  border-color: #f1f5f9; /* White-ish focus for monochrome */
+  border-color: var(--primary);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.1);
 }
 
 .forge-button-primary {
-  background: #f1f5f9;
-  color: #020617;
-  font-weight: 700;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 8px 16px;
   transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .forge-button-primary:hover {
-  background: #ffffff;
+  filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
+.forge-button-secondary {
+  background: #E4E6EB;
+  color: #050505;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+}
+
+.forge-button-secondary:hover {
+  background: #D8DADF;
+}
+
 .forge-tab-active {
-  color: #f1f5f9;
-  border-bottom: 2px solid #f1f5f9;
+  color: var(--primary);
+  border-bottom: 3px solid var(--primary);
 }
 
 .forge-tab-inactive {
-  color: #64748b;
+  color: var(--muted);
 }
 
 .forge-tab-inactive:hover {
-  color: #94a3b8;
+  color: #050505;
+  background: rgba(0, 0, 0, 0.05);
 }
 
-/* Premium Typography */
-.text-data {
-  font-family: 'JetBrains Mono', 'Geist Mono', 'Fira Code', monospace;
-  letter-spacing: -0.02em;
+/* Avatar Components */
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
 }
 
-.tracking-premium {
-  letter-spacing: 0.05em;
+/* Typography */
+.text-body-fine {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.text-title-bold {
+  font-size: 15px;
+  font-weight: 700;
+  color: #050505;
 }
 
 /* Animation Utilities */
-@keyframes forge-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-forge-pulse {
-  animation: forge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.animate-safe-fade {
+  animation: fadeIn 0.3s ease-out forwards;
 }

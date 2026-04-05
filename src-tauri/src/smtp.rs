@@ -27,7 +27,7 @@ impl SmtpServer {
     }
 
     pub async fn run(&self) -> tokio::io::Result<()> {
-        let addr = format!("127.0.0.1:{}", self.port);
+        let addr = format!("0.0.0.0:{}", self.port);
         let listener = TcpListener::bind(&addr).await?;
         println!("SMTP Listener active on {}", addr);
 
@@ -54,55 +54,12 @@ impl SmtpServer {
 
                     let raw_msg = String::from_utf8_lossy(&buffer[..n]);
                     
+                    // If we are already in Data state, everything in this packet is data
+                    // unless it contains the EOD marker.
                     if let SmtpState::Data = state {
                         data_buffer.extend_from_slice(&buffer[..n]);
-                        
-                        // Robust EOD (End of Data) detection: \r\n.\r\n
-                        // We check the end of the buffer. Some clients might send it in small chunks.
                         if data_buffer.ends_with(b"\r\n.\r\n") || data_buffer == b".\r\n" {
-                            // Process Email
-                            if let Some(message) = MessageParser::default().parse(&data_buffer) {
-                                let mut email = crate::db::Email {
-                                    id: 0,
-                                    message_id: message.message_id().map(|s| s.to_string()),
-                                    sender: message.from().and_then(|f| f.as_list()).and_then(|l| l.first()).and_then(|a| a.address()).map(|s| s.to_string()).unwrap_or_else(|| "unknown".to_string()),
-                                    recipients: message.to().and_then(|t| t.as_list()).and_then(|l| l.first()).and_then(|a| a.address()).map(|s| s.to_string()).unwrap_or_else(|| "unknown".to_string()),
-                                    subject: message.subject().unwrap_or("No Subject").to_string(),
-                                    html_body: message.body_html(0).map(|b| b.to_string()),
-                                    text_body: message.body_text(0).map(|b| b.to_string()),
-                                    raw_source: String::from_utf8_lossy(&data_buffer).to_string(),
-                                    project_id: project_id.clone(),
-                                    created_at: chrono::Utc::now().to_rfc3339(),
-                                    is_read: false,
-                                };
-                                
-                                if let Ok(id) = crate::db::save_email(&db_path, &email) {
-                                    // Auto-register project in the projects table if it's the first time we see it
-                                    let _ = crate::db::create_project(&db_path, &project_id, &project_id);
-                                    
-                                    email.id = id;
-                                    let _ = app_handle.emit("new-email", email.clone());
-                                    
-                                    let project_id_copy = project_id.clone();
-                                    let subject_copy = email.subject.clone();
-                                    
-                                    // Use a background task for webhooks to avoid blocking SMTP
-                                    let db_path_clone = db_path.clone();
-                                    let http_client_clone = http_client.clone();
-                                    let app_handle_clone = app_handle.clone();
-                                    tokio::spawn(async move {
-                                        dispatch::broadcast_to_webhooks(db_path_clone, http_client_clone, email).await;
-                                        
-                                        // V2.0: Trigger System Notification
-                                        use tauri_plugin_notification::NotificationExt;
-                                        let _ = app_handle_clone.notification()
-                                            .builder()
-                                            .title("ForgeMail: New Signal")
-                                            .body(format!("Inbox: {}\nSub: {}", project_id_copy, subject_copy))
-                                            .show();
-                                    });
-                                }
-                            }
+                            Self::process_email_data(&db_path, &app_handle, &http_client, &data_buffer, &project_id).await;
                             let _ = socket.write_all(b"250 OK\r\n").await;
                             data_buffer.clear();
                             state = SmtpState::Command;
@@ -122,7 +79,7 @@ impl SmtpServer {
                                 if upper_cmd.starts_with("EHLO") || upper_cmd.starts_with("HELO") {
                                     let _ = socket.write_all(b"250-ForgeMail-Engine\r\n250-AUTH LOGIN PLAIN\r\n250-SIZE 15728640\r\n250 OK\r\n").await;
                                 } else if upper_cmd.starts_with("AUTH LOGIN") {
-                                    let _ = socket.write_all(b"334 VXNlcm5hbWU6\r\n").await; // "Username:"
+                                    let _ = socket.write_all(b"334 VXNlcm5hbWU6\r\n").await; 
                                     state = SmtpState::AuthUser;
                                 } else if upper_cmd.starts_with("MAIL FROM") || upper_cmd.starts_with("RCPT TO") {
                                     let _ = socket.write_all(b"250 OK\r\n").await;
@@ -141,18 +98,70 @@ impl SmtpServer {
                                 if let Ok(decoded) = general_purpose::STANDARD.decode(cmd) {
                                     project_id = String::from_utf8_lossy(&decoded).to_string();
                                 }
-                                let _ = socket.write_all(b"334 UGFzc3dvcmQ6\r\n").await; // "Password:"
+                                let _ = socket.write_all(b"334 UGFzc3dvcmQ6\r\n").await;
                                 state = SmtpState::AuthPass;
                             }
                             SmtpState::AuthPass => {
                                 let _ = socket.write_all(b"235 Authentication successful\r\n").await;
                                 state = SmtpState::Command;
                             }
-                            SmtpState::Data => {}
+                            SmtpState::Data => {
+                                // This handles the case where data follows the DATA command in the same packet
+                                data_buffer.extend_from_slice(cmd.as_bytes());
+                                data_buffer.extend_from_slice(b"\r\n");
+                                if data_buffer.ends_with(b"\r\n.\r\n") || data_buffer == b".\r\n" {
+                                    Self::process_email_data(&db_path, &app_handle, &http_client, &data_buffer, &project_id).await;
+                                    let _ = socket.write_all(b"250 OK\r\n").await;
+                                    data_buffer.clear();
+                                    state = SmtpState::Command;
+                                }
+                            }
                         }
                     }
                 }
             });
+        }
+    }
+
+    async fn process_email_data(db_path: &PathBuf, app_handle: &AppHandle, http_client: &Client, data_buffer: &[u8], project_id: &str) {
+        if let Some(message) = MessageParser::default().parse(data_buffer) {
+            let mut email = crate::db::Email {
+                id: 0,
+                message_id: message.message_id().map(|s| s.to_string()),
+                sender: message.from().and_then(|f| f.as_list()).and_then(|l| l.first()).and_then(|a| a.address()).map(|s| s.to_string()).unwrap_or_else(|| "unknown".to_string()),
+                recipients: message.to().and_then(|t| t.as_list()).and_then(|l| l.first()).and_then(|a| a.address()).map(|s| s.to_string()).unwrap_or_else(|| "unknown".to_string()),
+                subject: message.subject().unwrap_or("No Subject").to_string(),
+                html_body: message.body_html(0).map(|b| b.to_string()),
+                text_body: message.body_text(0).map(|b| b.to_string()),
+                raw_source: String::from_utf8_lossy(data_buffer).to_string(),
+                project_id: project_id.to_string(),
+                created_at: chrono::Utc::now().to_rfc3339(),
+                is_read: false,
+                is_starred: false,
+                folder: "inbox".to_string(),
+            };
+            
+            if let Ok(id) = crate::db::save_email(db_path, &email) {
+                let _ = crate::db::create_project(db_path, project_id, project_id, None, Some("Auto-discovered workspace"));
+                email.id = id;
+                let _ = app_handle.emit("new-email", email.clone());
+                
+                let project_id_copy = project_id.to_string();
+                let subject_copy = email.subject.clone();
+                let db_path_clone = db_path.clone();
+                let http_client_clone = http_client.clone();
+                let app_handle_clone = app_handle.clone();
+                
+                tokio::spawn(async move {
+                    dispatch::broadcast_to_webhooks(db_path_clone, http_client_clone, email).await;
+                    use tauri_plugin_notification::NotificationExt;
+                    let _ = app_handle_clone.notification()
+                        .builder()
+                        .title("ForgeMail: New Signal")
+                        .body(format!("Inbox: {}\nSub: {}", project_id_copy, subject_copy))
+                        .show();
+                });
+            }
         }
     }
 }

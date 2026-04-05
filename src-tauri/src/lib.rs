@@ -18,22 +18,14 @@ pub struct AppState {
 async fn get_emails(
     state: tauri::State<'_, AppState>,
     project_id: Option<String>,
+    folder: Option<String>,
 ) -> Result<Vec<db::Email>, String> {
-    db::get_emails(&state.db_path, project_id).map_err(|e| e.to_string())
+    db::get_emails(&state.db_path, project_id, folder).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn get_projects(state: tauri::State<'_, AppState>) -> Result<Vec<String>, String> {
     db::get_projects(&state.db_path).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn create_project(
-    state: tauri::State<'_, AppState>,
-    id: String,
-    name: String,
-) -> Result<(), String> {
-    db::create_project(&state.db_path, &id, &name).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -52,8 +44,75 @@ async fn mark_as_read(state: tauri::State<'_, AppState>, id: i64) -> Result<(), 
 }
 
 #[tauri::command]
-async fn mark_all_as_read(state: tauri::State<'_, AppState>, project_id: String) -> Result<(), String> {
-    db::mark_all_as_read(&state.db_path, &project_id).map_err(|e| e.to_string())
+async fn mark_all_as_read(state: tauri::State<'_, AppState>, project_id: Option<String>) -> Result<(), String> {
+    db::mark_all_as_read(&state.db_path, project_id.as_deref().unwrap_or("")).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn toggle_star(state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
+    db::toggle_star(&state.db_path, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn move_to_trash(state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
+    db::move_to_trash(&state.db_path, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_project(
+    state: tauri::State<'_, AppState>,
+    name: String,
+    id: String,
+    webhook: Option<String>,
+    description: Option<String>
+) -> Result<(), String> {
+    db::create_project(
+        &state.db_path,
+        &name,
+        &id,
+        webhook.as_deref(),
+        description.as_deref()
+    ).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn restore_email(state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
+    db::restore_email(&state.db_path, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_favorite_senders(state: tauri::State<'_, AppState>) -> Result<Vec<(String, String)>, String> {
+    db::get_favorite_senders(&state.db_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn send_test_email(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    sender: String,
+    recipient: String,
+    subject: String,
+    body: String,
+) -> Result<(), String> {
+    let email = db::Email {
+        id: 0,
+        message_id: Some(uuid::Uuid::new_v4().to_string()),
+        sender,
+        recipients: recipient,
+        subject,
+        html_body: Some(body.clone()),
+        text_body: Some(body),
+        raw_source: "From: Test\r\nSubject: Test\r\n\r\nTest".to_string(),
+        project_id: "default".to_string(),
+        created_at: "".to_string(),
+        is_read: false,
+        is_starred: false,
+        folder: "inbox".to_string(),
+    };
+    
+    db::save_email(&state.db_path, &email).map_err(|e| e.to_string())?;
+    app.emit("new-email", ()).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -361,6 +420,11 @@ pub fn run() {
             replay_webhook_dispatch,
             mark_as_read,
             mark_all_as_read,
+            toggle_star,
+            move_to_trash,
+            restore_email,
+            get_favorite_senders,
+            send_test_email,
             validate_license,
             get_settings,
             update_settings

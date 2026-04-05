@@ -2,7 +2,7 @@
   "name": "forgemail-desktop",
   "description": "Premium local-first SMTP interception and webhook automation for professional developers.",
   "private": true,
-  "version": "1.2.2",
+  "version": "1.2.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,12 +18,18 @@
     "@tauri-apps/plugin-process": "^2",
     "@tauri-apps/plugin-updater": "^2",
     "autoprefixer": "^10.4.27",
+    "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
+    "nodemailer": "^8.0.4",
     "postcss": "^8.5.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-quill-new": "^3.8.3",
+    "react-toastify": "^11.0.5",
     "recharts": "^3.8.1",
-    "tailwindcss": "^4.2.2"
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

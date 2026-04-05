@@ -1,3 +1,29 @@
+# Changelog
+
+## [1.2.4] - 2026-04-03 — *The Premium Inspector Release*
+
+### Added
+- **Premium Device Preview**: Dynamic Mobile/Tablet/Desktop toggle for email inspection.
+- **High-Density Metadata**: Professional grid view for From, To, Date, and Size.
+- **Extended Inspector Tabs**: Added HTML Source, Raw Headers, and Analysis modes.
+- **Precision Modals**: Full mobile responsiveness and "Click Outside to Close" interactivity for all system modals.
+
+---
+
+## [1.2.3] - 2026-04-06 — *The Simplicity & Guidance Release*
+
+### Added
+- **Multi-Step Onboarding**: A 4-step interactive wizard that guides new users through SMTP connection, project silos, and auto-forwarding.
+- **Professional Update Modal**: A new, user-controlled update experience showing full release notes and a real-time progress bar.
+- **Junior-Friendly Snippets**: Step-by-step code examples for Laravel and Flutter included in the first-run experience.
+
+### Changed
+- **Terminology Rebrand (Simple English)**: Replaced complex jargon with intuitive terms (e.g., "Signal Feed" → "Inbox", "Infrastructure Hub" → "Getting Started", "Dispatch" → "Forwarding").
+- **UI/UX Refinement**: Reduced visual intensity by swapping ultra-bold (900) fonts for semibold (600) to improve readability.
+- **Sidebar Clarity**: Simplified project navigation and simplified header terminology.
+
+---
+
 ## [1.2.2] - 2026-04-04 — *The Stability Patch*
 
 ### Fixed
