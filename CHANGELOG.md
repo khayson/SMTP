@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.5] - 2026-04-05 — *The Reliability & Infrastructure Release*
+
+### Added
+- **Centralized Type System**: Introduced `src/types.ts` as the single source of truth for the `Email` interface across all modules (App, MessageList, Inspector).
+- **Robust Setup Snippets**: Enhanced the Configuration Guide with case-insensitive, trimmed tech-stack matching for Node.js, Go, and others.
+- **Enhanced Clipboard Feedback**: Overhauled the credential copy utility with visual toast confirmation and empty-state validation.
+
+### Changed
+- **Interface Standardization**: Synced the frontend `Email` interface with the Rust backend, explicitly using `raw_source` and improving optional field handling.
+- **Project Isolation Focus**: Refined the folder and project filtering logic for 100% reliable segmentations.
+
+### Fixed
+- **TypeScript Mapping Errors**: Resolved critical `Type Email[] is not assignable` errors caused by conflicting local interface definitions.
+- **Missing Snippets bug**: Fixed an issue where Node.js and Go configuration strings were appearing empty in the Setup Guide.
+
+---
+
 ## [1.2.4] - 2026-04-03 — *The Premium Inspector Release*
 
 ### Added
