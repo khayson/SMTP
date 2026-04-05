@@ -2,7 +2,7 @@
   "name": "forgemail-desktop",
   "description": "Premium local-first SMTP interception and webhook automation for professional developers.",
   "private": true,
-  "version": "1.2.4",
+  "version": "1.2.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
