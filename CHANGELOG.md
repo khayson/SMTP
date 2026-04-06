@@ -1,19 +1,22 @@
 # Changelog
 
-## [1.2.5] - 2026-04-05 — *The Reliability & Infrastructure Release*
+## [1.2.5] - 2026-04-06 — *The Khay Studio Evolution*
 
 ### Added
-- **Centralized Type System**: Introduced `src/types.ts` as the single source of truth for the `Email` interface across all modules (App, MessageList, Inspector).
-- **Robust Setup Snippets**: Enhanced the Configuration Guide with case-insensitive, trimmed tech-stack matching for Node.js, Go, and others.
-- **Enhanced Clipboard Feedback**: Overhauled the credential copy utility with visual toast confirmation and empty-state validation.
+- **Major Rebrand**: Established **Khay Studio** as the parent organization and rebranded the project from KH STUDIOS.
+- **Product Vision**: Positioned **ForgeMail** as the first flagship tool in the upcoming **Forge** developer ecosystem.
+- **High-Fidelity Preview**: Integrated professional **Device Frames** (Mobile, Tablet, Desktop) for pixel-perfect email inspection.
+- **External Navigation**: Implemented a secure `postMessage` bridge to allow links inside email previews to safely open in the user's default browser.
+- **Centralized Type System**: Introduced `src/types.ts` as the single source of truth for the `Email` interface across all modules.
 
 ### Changed
-- **Interface Standardization**: Synced the frontend `Email` interface with the Rust backend, explicitly using `raw_source` and improving optional field handling.
-- **Project Isolation Focus**: Refined the folder and project filtering logic for 100% reliable segmentations.
+- **Branding Consistency**: Standardized ForgeMail and Khay Studio branding across all configuration files, metadata, and UI footers.
+- **Interface Standardization**: Synced the frontend `Email` interface with the Rust backend for 100% type safety.
+- **Project Isolation**: Refined workspace segments to ensure perfect isolation between developer projects.
 
 ### Fixed
-- **TypeScript Mapping Errors**: Resolved critical `Type Email[] is not assignable` errors caused by conflicting local interface definitions.
-- **Missing Snippets bug**: Fixed an issue where Node.js and Go configuration strings were appearing empty in the Setup Guide.
+- **Tag Synchronization**: Resolved a versioning mismatch by re-aligning the `v1.2.5` tag with the final rebranding commit.
+- **TypeScript Mapping Errors**: Fixed critical `Type Email[] is not assignable` errors caused by legacy interface conflicts.
 
 ---
 
