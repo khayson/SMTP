@@ -2,7 +2,7 @@
 name = "forgemail-desktop"
 version = "1.2.5"
 description = "Premium Local SMTP Orchestrator"
-authors = ["KH STUDIOS"]
+authors = ["Khay Studio"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -17,6 +17,7 @@ interface MessageListProps {
   toggleStar: (id: number) => void;
   handleDelete: (id: number) => void;
   selectedFolder: string;
+  smtpPort: number;
 }
 
 export default function MessageList({
@@ -31,7 +32,8 @@ export default function MessageList({
   clearAll,
   toggleStar,
   handleDelete,
-  selectedFolder
+  selectedFolder,
+  smtpPort
 }: MessageListProps) {
   const [showConnectInfo, setShowConnectInfo] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function MessageList({
 
   const creds = [
     { label: 'Host', value: '127.0.0.1', field: 'Host' },
-    { label: 'Port', value: '1025', field: 'Port' },
+    { label: 'Port', value: smtpPort.toString(), field: 'Port' },
     { label: 'User', value: selectedProject || 'default', field: 'User' },
     { label: 'Pass', value: 'any', field: 'Pass' },
   ];

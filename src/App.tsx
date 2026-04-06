@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 // Studio Components
 import StudioHeader from "./components/studio/StudioHeader";
@@ -54,6 +55,7 @@ function App() {
   const [updateInfo, setUpdateInfo] = useState<any>(null);
   const [isDownloadingUpdate, setIsDownloadingUpdate] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [smtpPort, setSmtpPort] = useState<number>(1025);
 
   // --- Data Synchronization ---
   const fetchEmails = async () => {
@@ -84,6 +86,14 @@ function App() {
     fetchEmails();
     fetchProjects();
     fetchFavoriteSenders();
+
+    const loadGlobalSettings = async () => {
+      try {
+        const port = await invoke<string | null>("get_settings", { key: "smtp_port" });
+        if (port) setSmtpPort(parseInt(port));
+      } catch (e) { console.error("Global Settings Load Error:", e); }
+    };
+    loadGlobalSettings();
   }, [selectedProject, selectedFolder]);
 
   useEffect(() => {
@@ -183,7 +193,7 @@ function App() {
   };
 
   const clearAll = async () => {
-    // V1.2.7 "Soft Reset": Immediate execution for faster developer loop
+    // V1.2.5 "Soft Reset": Immediate execution for faster developer loop
     try {
       await invoke("clear_emails");
       fetchEmails();
@@ -215,27 +225,59 @@ function App() {
     });
   };
 
+  const openExternalLink = async (url: string) => {
+    try {
+      await openUrl(url);
+    } catch (error) {
+      console.error("Failed to open link:", error);
+      toast.error("Unable to open browser");
+    }
+  };
+
+  const handleRestartServer = async (newPort: number) => {
+    try {
+      await invoke("restart_smtp_server", { port: newPort });
+      setSmtpPort(newPort);
+      toast.success(`SMTP Server active on port ${newPort}`);
+    } catch (error) {
+      console.error("Server Restart Fail:", error);
+      toast.error(`Failed to restart on port ${newPort}`);
+    }
+  };
+
   const wrapHtmlWithLinkHandler = (html: string) => {
     const cleanedHtml = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "<!-- Script Blocked -->");
     const meta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: *; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">`;
     const base = `<base target="_blank">`;
-    return meta + base + cleanedHtml;
+    const script = `
+      <script>
+        document.addEventListener('click', function(e) {
+          const target = e.target.closest('a');
+          if (target && target.href) {
+            e.preventDefault();
+            window.parent.postMessage({ type: 'open-link', url: target.href }, '*');
+          }
+        });
+      </script>
+    `;
+    return meta + base + script + cleanedHtml;
   };
 
   const getFullConfigSnippet = (tech: string, project: string | null) => {
     const p = project || 'default';
     const t = tech.toLowerCase().trim();
+    const port = smtpPort;
     
     switch (t) {
-      case 'laravel': return `MAIL_MAILER=smtp\nMAIL_HOST=127.0.0.1\nMAIL_PORT=1025\nMAIL_USERNAME=${p}\nMAIL_PASSWORD=any`;
-      case 'flutter': return `final smtpServer = SmtpServer('127.0.0.1', port: 1025, username: '${p}', password: 'any');`;
+      case 'laravel': return `MAIL_MAILER=smtp\nMAIL_HOST=127.0.0.1\nMAIL_PORT=${port}\nMAIL_USERNAME=${p}\nMAIL_PASSWORD=any`;
+      case 'flutter': return `final smtpServer = SmtpServer('127.0.0.1', port: ${port}, username: '${p}', password: 'any');`;
       case 'node.js':
       case 'nodejs': 
-        return `const transport = nodemailer.createTransport({ \n  host: "127.0.0.1", \n  port: 1025, \n  auth: { user: "${p}", pass: "any" } \n});`;
-      case 'python': return `SMTP_HOST = "127.0.0.1"\nSMTP_PORT = 1025\nSMTP_USER = "${p}"\nSMTP_PASS = "any"`;
+        return `const transport = nodemailer.createTransport({ \n  host: "127.0.0.1", \n  port: ${port}, \n  auth: { user: "${p}", pass: "any" } \n});`;
+      case 'python': return `SMTP_HOST = "127.0.0.1"\nSMTP_PORT = ${port}\nSMTP_USER = "${p}"\nSMTP_PASS = "any"`;
       case 'go': 
       case 'golang':
-        return `// Using net/smtp\nauth := smtp.PlainAuth("", "${p}", "any", "127.0.0.1")\nerr := smtp.SendMail("127.0.0.1:1025", auth, from, to, msg)`;
+        return `// Using net/smtp\nauth := smtp.PlainAuth("", "${p}", "any", "127.0.0.1")\nerr := smtp.SendMail("127.0.0.1:${port}", auth, from, to, msg)`;
       default: return `// Config for ${tech} coming soon...`;
     }
   };
@@ -298,6 +340,7 @@ function App() {
                     toggleStar={toggleStar}
                     handleDelete={handleDelete}
                     selectedFolder={selectedFolder}
+                    smtpPort={smtpPort}
                   />
                </div>
 
@@ -320,6 +363,7 @@ function App() {
                         restoreEmail={restoreEmail}
                         copyToClipboard={copyToClipboard}
                         wrapHtmlWithLinkHandler={wrapHtmlWithLinkHandler}
+                        openExternalLink={openExternalLink}
                         isSmallScreen={true}
                       />
                     </DrawerContent>
@@ -337,6 +381,7 @@ function App() {
                       restoreEmail={restoreEmail}
                       copyToClipboard={copyToClipboard}
                       wrapHtmlWithLinkHandler={wrapHtmlWithLinkHandler}
+                      openExternalLink={openExternalLink}
                       isSmallScreen={false}
                     />
                  </div>
@@ -353,6 +398,8 @@ function App() {
               setSelectedProject={setSelectedProject}
               getFullConfigSnippet={getFullConfigSnippet}
               copyToClipboard={copyToClipboard}
+              openExternalLink={openExternalLink}
+              smtpPort={smtpPort}
             />
           )}
         </main>
@@ -368,6 +415,8 @@ function App() {
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+        smtpPort={smtpPort}
+        onRestartServer={handleRestartServer}
       />
 
       <CreateProjectModal 

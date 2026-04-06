@@ -25,6 +25,8 @@ interface HomeDashboardProps {
   setSelectedProject: (p: string | null) => void;
   getFullConfigSnippet: (tech: string, project: string | null) => string;
   copyToClipboard: (text: string, msg: string) => void;
+  openExternalLink: (url: string) => void;
+  smtpPort: number;
 }
 
 export default function HomeDashboard({
@@ -36,7 +38,9 @@ export default function HomeDashboard({
   selectedProject,
   setSelectedProject,
   getFullConfigSnippet,
-  copyToClipboard
+  copyToClipboard,
+  openExternalLink,
+  smtpPort
 }: HomeDashboardProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
@@ -145,7 +149,7 @@ export default function HomeDashboard({
                       <div className="space-y-4 font-bold border-t border-white/10 pt-8 mt-2">
                          {[
                            { label: 'Host', value: '127.0.0.1' },
-                           { label: 'Port', value: '1025' },
+                           { label: 'Port', value: smtpPort.toString() },
                            { label: 'User', value: p },
                            { label: 'Pass', value: 'any' },
                            { label: 'Auth', value: 'Standard' },
@@ -242,7 +246,7 @@ export default function HomeDashboard({
                       </div>
                    </div>
                    
-                   <p className="mt-6 text-[12px] text-[#65676B] font-medium text-center">Refer to <span className="text-[#1877F2] hover:underline cursor-pointer">Studio Documentation</span> for custom ports and relay patterns.</p>
+                   <p className="mt-6 text-[12px] text-[#65676B] font-medium text-center">Refer to <span onClick={() => openExternalLink("https://github.com/khayson/SMTP")} className="text-[#1877F2] hover:underline cursor-pointer">Studio Documentation</span> for custom ports and relay patterns.</p>
                 </div>
              </div>
           </div>
@@ -256,7 +260,7 @@ export default function HomeDashboard({
                       <div className="w-2.5 h-2.5 rounded-full bg-[#1877F2] animate-pulse shadow-[0_0_10px_#1877F2]" />
                       <span className="text-[12px] font-bold text-[#1877F2] uppercase tracking-[0.2em]">Flagship Version Update</span>
                    </div>
-                   <h3 className="text-5xl font-extrabold text-[#050505] tracking-tight leading-tight">Studio 1.2.7 <br/> Clean Modern Evolution</h3>
+                   <h3 className="text-5xl font-extrabold text-[#050505] tracking-tight leading-tight">Studio 1.2.5 <br/> Clean Modern Evolution</h3>
                    <p className="text-[16px] text-[#65676B] leading-relaxed font-medium">We've completed the transition to a high-fidelity light theme, re-engineered the 3-column desktop layout, and introduced persistent 'Signals' folder state for total project isolation.</p>
                    
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">

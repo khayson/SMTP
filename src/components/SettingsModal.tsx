@@ -5,10 +5,12 @@ import { Shield, Key, X, Settings, RefreshCw } from "lucide-react";
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  smtpPort: number;
+  onRestartServer: (newPort: number) => Promise<void>;
 }
 
-export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [smtpPort, setSmtpPort] = useState<number>(1025);
+export default function SettingsModal({ isOpen, onClose, smtpPort, onRestartServer }: SettingsModalProps) {
+  const [localPort, setLocalPort] = useState<number>(smtpPort);
   const [licenseKey, setLicenseKey] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
@@ -16,10 +18,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (isOpen) {
+      setLocalPort(smtpPort);
       const loadSettings = async () => {
         try {
-          const port = await invoke<string | null>("get_settings", { key: "smtp_port" });
-          if (port) setSmtpPort(parseInt(port));
           const license = await invoke<string | null>("get_settings", { key: "license_key" });
           if (license) setLicenseKey(license);
         } catch (e) { 
@@ -28,7 +29,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       };
       loadSettings();
     }
-  }, [isOpen]);
+  }, [isOpen, smtpPort]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,7 +44,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await invoke("update_settings", { key: "smtp_port", value: smtpPort.toString() });
+      if (localPort !== smtpPort) {
+        await onRestartServer(localPort);
+      }
       await invoke("update_settings", { key: "license_key", value: licenseKey });
       onClose();
     } catch (error) {
@@ -84,8 +87,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <div className="relative group">
                   <input 
                     type="number"
-                    value={smtpPort}
-                    onChange={(e) => setSmtpPort(parseInt(e.target.value))}
+                    value={localPort}
+                    onChange={(e) => setLocalPort(parseInt(e.target.value) || 0)}
                     className="w-full bg-[#F0F2F5] border border-transparent rounded-xl sm:rounded-2xl px-5 sm:px-6 py-3.5 sm:py-4 text-[14px] sm:text-[15px] text-[#050505] focus:bg-white focus:border-[#1877F2] transition-all font-bold outline-none shadow-inner"
                   />
                   <div className="absolute right-5 top-1/2 -translate-y-1/2 text-[#65676B] group-focus-within:text-[#1877F2] transition-colors">
@@ -113,7 +116,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div className="bg-blue-50 border border-blue-100 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-3xl flex items-start gap-3 sm:gap-4">
               <RefreshCw size={16} className="text-[#1877F2] mt-1 shrink-0 sm:w-[18px]" />
               <p className="text-[12px] sm:text-[13px] text-[#1877F2] font-semibold leading-relaxed">
-                Note: Changing core ports requires an application reload to bind server listeners.
+                Note: Changing core ports requires an application restart to bind server listeners.
               </p>
             </div>
           </div>

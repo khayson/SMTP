@@ -8,10 +8,14 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{TrayIcon, TrayIconBuilder, TrayIconEvent};
+use tokio::sync::Mutex;
+use tauri::async_runtime::JoinHandle;
+use std::sync::Arc;
 
 pub struct AppState {
     pub db_path: PathBuf,
     pub http_client: Client,
+    pub smtp_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
 }
 
 #[tauri::command]
@@ -316,6 +320,42 @@ async fn validate_license(license_key: String) -> Result<bool, String> {
     Ok(true)
 }
 
+#[tauri::command]
+async fn restart_smtp_server(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    port: u16,
+) -> Result<(), String> {
+    let mut handle_lock = state.smtp_handle.lock().await;
+    
+    // 1. Kill existing server if running
+    if let Some(handle) = handle_lock.take() {
+        handle.abort();
+        println!("Existing SMTP server aborted.");
+    }
+
+    // 2. Persist new port to database
+    db::update_settings(&state.db_path, "smtp_port", &port.to_string()).map_err(|e| e.to_string())?;
+
+    // 3. Spawn new server
+    let db_path = state.db_path.clone();
+    let http_client = state.http_client.clone();
+    let app_handle = app.clone();
+    
+    let smtp_server = smtp::SmtpServer::new(port, db_path, app_handle.clone(), http_client);
+    let new_handle = tauri::async_runtime::spawn(async move {
+        if let Err(e) = smtp_server.run().await {
+            eprintln!("SMTP Server Error: {}", e);
+            let _ = app_handle.emit("smtp-error", format!("Failed to start SMTP server on port {}: {}. This port might be in use.", port, e));
+        }
+    });
+
+    *handle_lock = Some(new_handle);
+    println!("New SMTP server spawned on port {}", port);
+    
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -377,13 +417,13 @@ pub fn run() {
                 Err(e) => eprintln!("Log hygiene failed: {}", e),
             }
 
-            // Spawn SMTP Server with AppHandle for events
-            let app_handle = app.handle().clone();
             let http_client = Client::new();
+            let smtp_handle = Arc::new(Mutex::new(None));
 
             app.manage(AppState {
                 db_path: db_path.clone(),
                 http_client: http_client.clone(),
+                smtp_handle: smtp_handle.clone(),
             });
 
             let port = match db::get_settings(&db_path, "smtp_port") {
@@ -391,13 +431,20 @@ pub fn run() {
                 _ => 1025,
             };
 
-            let smtp_server = smtp::SmtpServer::new(port, db_path, app_handle.clone(), http_client);
-            tauri::async_runtime::spawn(async move {
+            let app_handle_clone = app.handle().clone();
+            let db_path_clone = db_path.clone();
+            let http_client_clone = http_client.clone();
+
+            let smtp_server = smtp::SmtpServer::new(port, db_path_clone, app_handle_clone.clone(), http_client_clone);
+            let handle = tauri::async_runtime::spawn(async move {
                 if let Err(e) = smtp_server.run().await {
                     eprintln!("SMTP Server Error: {}", e);
-                    let _ = app_handle.emit("smtp-error", format!("Failed to start SMTP server on port {}: {}. This port might be in use by another application.", port, e));
+                    let _ = app_handle_clone.emit("smtp-error", format!("Failed to start SMTP server on port {}: {}. This port might be in use.", port, e));
                 }
             });
+
+            let mut handle_lock = smtp_handle.blocking_lock();
+            *handle_lock = Some(handle);
 
             Ok(())
         })
@@ -427,7 +474,8 @@ pub fn run() {
             send_test_email,
             validate_license,
             get_settings,
-            update_settings
+            update_settings,
+            restart_smtp_server
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

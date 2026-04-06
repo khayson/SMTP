@@ -1,4 +1,6 @@
 import { Mail, Smartphone, Tablet, Monitor, Copy, Trash2, ArrowLeft, Star, Printer, MoreHorizontal, RotateCcw } from "lucide-react";
+import { useEffect } from "react";
+import DeviceFrame from "./DeviceFrame";
 
 import { Email } from "../../types";
 
@@ -13,6 +15,7 @@ interface EmailInspectorProps {
   copyToClipboard: (text: string, msg: string) => void;
   wrapHtmlWithLinkHandler: (html: string) => string;
   setSelectedEmail: (e: Email | null) => void;
+  openExternalLink: (url: string) => void;
   isSmallScreen: boolean;
   isMasterView?: boolean;
 }
@@ -28,9 +31,19 @@ export default function EmailInspector({
   copyToClipboard,
   wrapHtmlWithLinkHandler,
   setSelectedEmail,
+  openExternalLink,
   isSmallScreen,
   isMasterView = false
 }: EmailInspectorProps) {
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'open-link' && event.data?.url) {
+        openExternalLink(event.data.url);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [openExternalLink]);
   
   if (!selectedEmail) {
     return (
@@ -127,28 +140,28 @@ export default function EmailInspector({
          </div>
 
          {/* Content Pane */}
-         <div 
-          className={`bg-white rounded-xl mx-auto overflow-hidden flex flex-col border border-[#E4E6EB] shadow-xl transition-all duration-500 ${previewDevice === 'mobile' ? 'w-[375px] h-[667px]' : previewDevice === 'tablet' ? 'w-[768px] h-[900px]' : 'w-full flex-1'}`}
-         >
-           {inspectorTab === 'preview' && (
-             <iframe 
-               title="Message Preview"
-               className="w-full h-full border-none bg-white" 
-               sandbox="allow-same-origin allow-popups"
-               srcDoc={wrapHtmlWithLinkHandler(selectedEmail.html_body || `<pre style="padding:40px;font-family:Inter,sans-serif;color:#050505;font-size:14px;line-height:1.6">${selectedEmail.text_body}</pre>`)} 
-             />
-           )}
-           {['source', 'text'].includes(inspectorTab) && (
-             <div className="flex-1 bg-white p-8 overflow-auto font-mono text-[13px] leading-relaxed select-text custom-scrollbar">
-                <div className="flex justify-between items-center mb-6 border-b border-[#E4E6EB] pb-4">
-                  <span className="text-[11px] font-bold text-[#65676B] uppercase tracking-widest">{inspectorTab === 'source' ? 'Source Code' : 'Plain Text Content'}</span>
-                  <button onClick={() => copyToClipboard((inspectorTab === 'source' ? selectedEmail.html_body : selectedEmail.text_body) || "", "Copied content")} className="text-[#1877F2] hover:underline text-[12px] font-bold flex items-center gap-1"><Copy size={12} /> Copy All</button>
+         <div className="flex-1 w-full max-w-6xl mx-auto min-h-0 flex flex-col">
+            <DeviceFrame type={previewDevice}>
+              {inspectorTab === 'preview' && (
+                <iframe 
+                  title="Message Preview"
+                  className="w-full h-full border-none bg-white" 
+                  sandbox="allow-same-origin allow-popups"
+                  srcDoc={wrapHtmlWithLinkHandler(selectedEmail.html_body || `<pre style="padding:40px;font-family:Inter,sans-serif;color:#050505;font-size:14px;line-height:1.6">${selectedEmail.text_body}</pre>`)} 
+                />
+              )}
+              {['source', 'text'].includes(inspectorTab) && (
+                <div className="w-full h-full bg-white p-8 overflow-auto font-mono text-[13px] leading-relaxed select-text custom-scrollbar">
+                   <div className="flex justify-between items-center mb-6 border-b border-[#E4E6EB] pb-4">
+                     <span className="text-[11px] font-bold text-[#65676B] uppercase tracking-widest">{inspectorTab === 'source' ? 'Source Code' : 'Plain Text Content'}</span>
+                     <button onClick={() => copyToClipboard((inspectorTab === 'source' ? selectedEmail.html_body : selectedEmail.text_body) || "", "Copied content")} className="text-[#1877F2] hover:underline text-[12px] font-bold flex items-center gap-1"><Copy size={12} /> Copy All</button>
+                   </div>
+                   <pre className="whitespace-pre-wrap text-[#050505] font-medium tracking-tight">
+                     {inspectorTab === 'source' ? selectedEmail.html_body : selectedEmail.text_body}
+                   </pre>
                 </div>
-                <pre className="whitespace-pre-wrap text-[#050505] font-medium tracking-tight">
-                  {inspectorTab === 'source' ? selectedEmail.html_body : selectedEmail.text_body}
-                </pre>
-             </div>
-           )}
+              )}
+            </DeviceFrame>
          </div>
 
       </div>

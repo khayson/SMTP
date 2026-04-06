@@ -1,10 +1,10 @@
-# Postmaster: Responsive SMTP Studio 🚀
+# ForgeMail: Responsive SMTP Studio 🚀
 
 **The premium, local-first SMTP catch-all server for modern developer workflows.**
 
-Postmaster is a high-performance developer utility built with Tauri and Rust. It intercepts all outgoing emails from your local environment (Laravel, Flutter, Node.js, etc.) and presents them in a beautiful, responsive dashboard—eliminating the risk of sending test emails to real customers.
+ForgeMail is a high-performance developer utility built with Tauri and Rust. It intercepts all outgoing emails from your local environment (Laravel, Flutter, Node.js, etc.) and presents them in a beautiful, responsive dashboard—eliminating the risk of sending test emails to real customers.
 
-![Postmaster Dashboard](https://raw.githubusercontent.com/khayson/SMTP/main/public/screenshot.png) *(Placeholder for when you add one)*
+![ForgeMail Dashboard](https://raw.githubusercontent.com/khayson/SMTP/main/public/screenshot.png) *(Placeholder for when you add one)*
 
 ## ✨ Key Features
 
@@ -18,7 +18,7 @@ Postmaster is a high-performance developer utility built with Tauri and Rust. It
 ## 🚀 Quick Start for Developers
 
 ### Laravel Integration
-Update your `.env` file to point to the Postmaster studio:
+Update your `.env` file to point to the ForgeMail studio:
 
 ```env
 MAIL_MAILER=smtp
@@ -50,7 +50,7 @@ final smtpServer = SmtpServer('127.0.0.1', port: 1025);
 3.  The SMTP server starts automatically on port `1025`.
 
 ## 🤝 Contributing
-Postmaster is built by developers, for developers. If you have any suggestions or find a bug, feel free to open an issue!
+ForgeMail is built by developers, for developers. If you have any suggestions or find a bug, feel free to open an issue!
 
 ---
-*Created by [KHAY STUDIOS](https://github.com/khayson)*
+*Created by [Khay Studio](https://github.com/khayson)*

@@ -15,7 +15,7 @@ export default function ComposeModal({ isOpen, onClose, fetchEmails }: ComposeMo
   const [sender, setSender] = useState("studio@forgemail.dev");
   const [recipient, setRecipient] = useState("app@local.dev");
   const [subject, setSubject] = useState("Studio Test Signal");
-  const [body, setBody] = useState("<h1>Postmaster Verification</h1><p>This is a high-fidelity test signal sent from the <b>ForgeMail Studio</b> compose utility.</p>");
+  const [body, setBody] = useState("<h1>ForgeMail Verification</h1><p>This is a high-fidelity test signal sent from the <b>ForgeMail Studio</b> compose utility.</p>");
   const [sending, setSending] = useState(false);
 
   const handleSend = async (e: React.FormEvent) => {
