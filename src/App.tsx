@@ -429,11 +429,11 @@ function App() {
       <ToastContainer position="bottom-right" autoClose={2500} theme="light" />
 
       {showUpdateModal && updateInfo && (
-        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-[#050505]/40 backdrop-blur-md p-6 animate-in fade-in duration-500">
-          <div className="w-full max-w-lg bg-white border border-[#E4E6EB] rounded-[3rem] p-12 shadow-2xl animate-in zoom-in-95 duration-500">
-            <h2 className="text-3xl font-extrabold text-[#050505] tracking-tight mb-2">Studio Update</h2>
-            <p className="text-[10px] text-[#1877F2] uppercase tracking-[0.2em] font-black mb-8">Version {updateInfo.version}</p>
-            <div className="bg-[#F0F2F5] rounded-2xl p-6 border border-transparent mb-8 text-[13px] text-[#65676B] font-semibold leading-relaxed">
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-md p-6 animate-in fade-in duration-500">
+          <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)] rounded-[3rem] p-12 shadow-2xl animate-in zoom-in-95 duration-500">
+            <h2 className="text-3xl font-extrabold text-[#f8fafc] tracking-tight mb-2">Studio Update</h2>
+            <p className="text-[10px] text-[var(--primary)] uppercase tracking-[0.2em] font-black mb-8">Version {updateInfo.version}</p>
+            <div className="bg-[var(--canvas)] rounded-2xl p-6 border border-transparent mb-8 text-[13px] text-[var(--muted)] font-semibold leading-relaxed">
               {updateInfo.body || "Performance optimizations and Clean Modern architecture overhaul."}
             </div>
             <div className="flex gap-4">
@@ -444,11 +444,11 @@ function App() {
                    try { await updateInfo.downloadAndInstall(); await relaunch(); } 
                    catch (e) { toast.error("Update failed."); setIsDownloadingUpdate(false); }
                  }}
-                 className="flex-1 bg-[#1877F2] text-white py-4 rounded-2xl text-[14px] font-extrabold shadow-lg shadow-[#1877F2]/20 active:scale-95 transition-all"
+                 className="flex-1 bg-[var(--primary)] text-white py-4 rounded-2xl text-[14px] font-extrabold shadow-lg shadow-[#1877F2]/20 active:scale-95 transition-all"
                >
                  {isDownloadingUpdate ? "Installing..." : "Launch Update"}
                </button>
-               <button onClick={() => setShowUpdateModal(false)} className="px-10 py-4 bg-[#F0F2F5] text-[#65676B] rounded-2xl text-[14px] font-extrabold hover:bg-[#E4E6EB] transition-all">Later</button>
+               <button onClick={() => setShowUpdateModal(false)} className="px-10 py-4 bg-[var(--canvas)] text-[var(--muted)] rounded-2xl text-[14px] font-extrabold hover:bg-[var(--border)] transition-all">Later</button>
             </div>
           </div>
         </div>

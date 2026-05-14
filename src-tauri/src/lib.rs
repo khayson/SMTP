@@ -18,6 +18,23 @@ pub struct AppState {
     pub smtp_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
 }
 
+/// Empty file next to the executable enables portable mode: database and settings live in `./data`.
+const PORTABLE_MARKER: &str = "forgemail.portable";
+
+fn resolve_app_data_dir(app: &tauri::App) -> PathBuf {
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let marker = dir.join(PORTABLE_MARKER);
+            if marker.exists() {
+                return dir.join("data");
+            }
+        }
+    }
+    app.path()
+        .app_data_dir()
+        .expect("Failed to get app data dir")
+}
+
 #[tauri::command]
 async fn get_emails(
     state: tauri::State<'_, AppState>,
@@ -314,13 +331,6 @@ async fn replay_webhook_dispatch(
 }
 
 #[tauri::command]
-async fn validate_license(license_key: String) -> Result<bool, String> {
-    // V1.2 Placeholder: Always returns true for current release
-    println!("Validating commercial license: {}", license_key);
-    Ok(true)
-}
-
-#[tauri::command]
 async fn restart_smtp_server(
     app: AppHandle,
     state: tauri::State<'_, AppState>,
@@ -401,14 +411,18 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .expect("Failed to get app data dir");
+            let app_data_dir = resolve_app_data_dir(app);
             if !app_data_dir.exists() {
                 std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data dir");
             }
             let db_path = app_data_dir.join("postmaster.db");
+            let portable = std::env::current_exe()
+                .ok()
+                .and_then(|e| e.parent().map(|d| d.join(PORTABLE_MARKER).exists()))
+                .unwrap_or(false);
+            if portable {
+                println!("ForgeMail portable mode: {}", app_data_dir.display());
+            }
             db::init_db(&db_path).expect("Failed to initialize database");
 
             // V1.7: Post-startup log hygiene
@@ -472,7 +486,6 @@ pub fn run() {
             restore_email,
             get_favorite_senders,
             send_test_email,
-            validate_license,
             get_settings,
             update_settings,
             restart_smtp_server

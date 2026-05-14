@@ -41,11 +41,11 @@ export default function FolderSidebar({
   ];
 
   return (
-    <aside className={`w-[280px] bg-[#F0F2F5] border-r border-[#E4E6EB] flex flex-col shrink-0 z-20 h-full transition-all duration-300 ${isSmallScreen && !isSidebarOpen ? '-translate-x-full absolute' : 'translate-x-0'}`}>
-      <div className="p-4 border-b border-[#E4E6EB] mb-4">
+    <aside className={`w-[280px] bg-[var(--canvas)] border-r border-[var(--border)] flex flex-col shrink-0 z-20 h-full transition-all duration-300 ${isSmallScreen && !isSidebarOpen ? '-translate-x-full absolute' : 'translate-x-0'}`}>
+      <div className="p-4 border-b border-[var(--border)] mb-4">
         <button 
           onClick={() => setIsComposeOpen(true)}
-          className="w-full py-3.5 bg-[#1877F2] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 shadow-lg shadow-blue-500/10 active:scale-95 transition-all text-[14px]"
+          className="w-full py-3.5 bg-[var(--primary)] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 shadow-lg shadow-[#1877F2]/20 active:scale-95 transition-all text-[14px]"
         >
           <Plus size={18} /> Compose Mail
         </button>
@@ -54,15 +54,15 @@ export default function FolderSidebar({
       <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
         {/* Main Folders */}
         <div className="mb-8">
-           <h3 className="text-[11px] font-bold text-[#65676B] uppercase tracking-widest px-3 mb-2 underline decoration-[#1877F2]/30 decoration-2 underline-offset-4">Signals Workspace</h3>
+           <h3 className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest px-3 mb-2 underline decoration-[var(--primary)]/30 decoration-2 underline-offset-4">Signals Workspace</h3>
            <div className="flex flex-col gap-0.5">
              {folders.map(f => (
                <button 
                 key={f.id}
                 onClick={() => { setSelectedFolder(f.id); setSelectedProject(null); }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[14px] ${selectedFolder === f.id && !selectedProject ? 'bg-[#E7F3FF] text-[#1877F2] font-bold shadow-sm' : 'text-[#050505] font-semibold hover:bg-[#E4E6EB]'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[14px] ${selectedFolder === f.id && !selectedProject ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-bold shadow-sm' : 'text-[#f8fafc] font-semibold hover:bg-[var(--surface)]'}`}
                >
-                 <span className={selectedFolder === f.id && !selectedProject ? 'text-[#1877F2]' : 'text-[#65676B]'}>{f.icon}</span>
+                 <span className={selectedFolder === f.id && !selectedProject ? 'text-[var(--primary)]' : 'text-[var(--muted)]'}>{f.icon}</span>
                  {f.label}
                </button>
              ))}
@@ -72,10 +72,10 @@ export default function FolderSidebar({
         {/* Dynamic Project Categories */}
         <div className="mb-8">
            <div className="flex items-center justify-between px-3 mb-2">
-              <h3 className="text-[11px] font-bold text-[#65676B] uppercase tracking-widest">Isolation Folders</h3>
+              <h3 className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest">Isolation Folders</h3>
               <button 
                 onClick={() => setIsProjectModalOpen(true)}
-                className="p-1 hover:bg-[#E4E6EB] rounded-md text-[#1877F2] transition-all"
+                className="p-1 hover:bg-[var(--surface)] rounded-md text-[var(--primary)] transition-all"
                 title="Create Workspace"
               >
                 <FolderPlus size={14} />
@@ -84,9 +84,9 @@ export default function FolderSidebar({
            <div className="flex flex-col gap-0.5">
              <button 
                 onClick={() => { setSelectedProject(""); setSelectedFolder('all'); }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[14px] ${selectedProject === "" ? 'bg-[#E7F3FF] text-[#1877F2] font-bold shadow-sm' : 'text-[#050505] font-semibold hover:bg-[#E4E6EB]'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[14px] ${selectedProject === "" ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-bold shadow-sm' : 'text-[#f8fafc] font-semibold hover:bg-[var(--surface)]'}`}
              >
-                <Layout size={18} className={selectedProject === "" ? 'text-[#1877F2]' : 'text-[#65676B]'} />
+                <Layout size={18} className={selectedProject === "" ? 'text-[var(--primary)]' : 'text-[var(--muted)]'} />
                 <span>All Signals</span>
              </button>
              
@@ -94,9 +94,9 @@ export default function FolderSidebar({
                <button 
                 key={p}
                 onClick={() => { setSelectedProject(p); if (selectedFolder === 'all') setSelectedFolder('inbox'); }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[14px] ${selectedProject === p ? 'bg-[#E7F3FF] text-[#1877F2] font-bold shadow-sm' : 'text-[#050505] font-semibold hover:bg-[#E4E6EB]'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[14px] ${selectedProject === p ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-bold shadow-sm' : 'text-[#f8fafc] font-semibold hover:bg-[var(--surface)]'}`}
                >
-                 <MailCheck size={18} className={selectedProject === p ? 'text-[#1877F2]' : 'text-[#65676B]'} />
+                 <MailCheck size={18} className={selectedProject === p ? 'text-[var(--primary)]' : 'text-[var(--muted)]'} />
                  <span className="truncate">{p}</span>
                </button>
              ))}
@@ -106,20 +106,20 @@ export default function FolderSidebar({
         {/* Favorite Contacts */}
         {favoriteSenders.length > 0 && (
           <div className="mb-8">
-             <h3 className="text-[11px] font-bold text-[#65676B] uppercase tracking-widest px-3 mb-2">Hotline Contacts</h3>
+             <h3 className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest px-3 mb-2">Hotline Contacts</h3>
              <div className="flex flex-col gap-0.5">
                {favoriteSenders.map(([sender, count]) => (
                 <button 
                   key={sender}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-[#050505] font-semibold hover:bg-[#E4E6EB] transition-all text-[13px] group"
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-[#f8fafc] font-semibold hover:bg-[var(--surface)] transition-all text-[13px] group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-white border border-[#E4E6EB] flex items-center justify-center text-[10px] shadow-sm text-[#1877F2]">
+                    <div className="w-8 h-8 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[10px] shadow-sm text-[var(--primary)]">
                        <User size={14} />
                     </div>
                     <span className="truncate">{sender}</span>
                   </div>
-                  <span className="text-[10px] bg-[#1877F2]/10 text-[#1877F2] px-2 py-0.5 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity">{count}</span>
+                  <span className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity">{count}</span>
                 </button>
                ))}
              </div>
@@ -128,17 +128,17 @@ export default function FolderSidebar({
       </div>
 
       {/* Footer Branding */}
-      <div className="p-4 border-t border-[#E4E6EB]">
+      <div className="p-4 border-t border-[var(--border)]">
          <button 
           onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-          className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${isSettingsOpen ? 'bg-[#E7F3FF] text-[#1877F2]' : 'text-[#65676B] hover:bg-[#E4E6EB]'}`}
+          className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${isSettingsOpen ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'text-[var(--muted)] hover:bg-[var(--surface)]'}`}
          >
            <Settings size={18} />
            <span className="text-[14px] font-bold">Studio Settings</span>
          </button>
          <div className="mt-4 px-3 flex items-center justify-between opacity-40 grayscale pointer-events-none">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#050505]">ForgeMail v1.3.1</span>
-            <div className="w-2 h-2 rounded-full bg-[#1877F2] animate-pulse" />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f8fafc]">ForgeMail v1.3.1</span>
+            <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
          </div>
       </div>
 

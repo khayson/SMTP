@@ -37,7 +37,33 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'ForgeMail v__VERSION__ — Stable Infrastructure'
-          releaseBody: 'See the artifacts below for the latest ForgeMail stable delivery engine.'
+          releaseBody: |
+            **Portable (no installer):** download `ForgeMail_x64_portable_<tag>.zip`, extract anywhere, run `forgemail-desktop.exe`. Your data stays in the `data` folder next to the app.
+
+            **Installer:** use the NSIS `*-setup.exe` if you prefer a classic install (and WebView2 bootstrap when needed).
+
+            See the artifacts below for the latest ForgeMail stable delivery engine.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+      - name: Pack portable Windows ZIP
+        shell: pwsh
+        run: |
+          $rel = "src-tauri/target/release"
+          $exe = Join-Path $rel "forgemail-desktop.exe"
+          if (-not (Test-Path $exe)) { Write-Error "Missing $exe — build step did not produce the app binary."; exit 1 }
+          $zipName = "ForgeMail_x64_portable_${{ github.ref_name }}.zip"
+          $stageRoot = "portable-pkg/ForgeMail"
+          New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
+          Copy-Item $exe $stageRoot/
+          Get-ChildItem $rel -File -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName $stageRoot/ }
+          if (Test-Path "$rel/resources") { Copy-Item "$rel/resources" "$stageRoot/resources" -Recurse }
+          New-Item -ItemType File -Force -Path "$stageRoot/forgemail.portable" | Out-Null
+          if (Test-Path $zipName) { Remove-Item $zipName -Force }
+          Compress-Archive -Path "portable-pkg/ForgeMail" -DestinationPath $zipName
+          Write-Host "Packed $zipName"
+      - name: Upload portable ZIP to GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" "ForgeMail_x64_portable_${{ github.ref_name }}.zip" --clobber

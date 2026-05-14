@@ -6,14 +6,16 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light;
-  color: #050505;
-  background-color: #FFFFFF;
+  color-scheme: dark;
+  color: #f8fafc;
+  background-color: #0b0e14;
 
   --primary: #1877F2;
-  --secondary: #F0F2F5;
-  --border: #E4E6EB;
-  --muted: #65676B;
+  --secondary: #1e293b;
+  --border: #1e293b;
+  --muted: #64748b;
+  --canvas: #0b0e14;
+  --surface: #131720;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,7 +31,7 @@ body {
   background-color: #FFFFFF;
 }
 
-/* ForgeMail Scrollbar - Clean Modern */
+/* ForgeMail Scrollbar - Dark Modern */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -38,35 +40,36 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #BCC0C4;
+  background: #334155;
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #8D949E;
+  background: #475569;
 }
 
 /* Premium UI Components */
 .forge-panel {
-  background: #FFFFFF;
+  background: var(--canvas);
   border: 1px solid var(--border);
 }
 
 .forge-card {
-  background: #FFFFFF;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
 }
 
 .forge-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .forge-input {
-  background: #F0F2F5;
-  border: 1px solid transparent;
-  color: #050505;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: #f8fafc;
   border-radius: 6px;
   padding: 8px 12px;
   outline: none;
@@ -75,8 +78,8 @@ body {
 
 .forge-input:focus {
   border-color: var(--primary);
-  background: #FFFFFF;
-  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.1);
+  background: var(--canvas);
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
 }
 
 .forge-button-primary {
@@ -86,29 +89,37 @@ body {
   border-radius: 6px;
   padding: 8px 16px;
   transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .forge-button-primary:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.2);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.forge-button-primary:active {
+  transform: translateY(0);
 }
 
 .forge-button-secondary {
-  background: #E4E6EB;
-  color: #050505;
+  background: var(--border);
+  color: #f8fafc;
   font-weight: 600;
   border-radius: 6px;
   padding: 8px 16px;
   transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .forge-button-secondary:hover {
-  background: #D8DADF;
+  background: #334155;
+  color: #FFFFFF;
 }
 
 .forge-tab-active {
   color: var(--primary);
-  border-bottom: 3px solid var(--primary);
+  border-bottom: 2px solid var(--primary);
 }
 
 .forge-tab-inactive {
@@ -116,8 +127,8 @@ body {
 }
 
 .forge-tab-inactive:hover {
-  color: #050505;
-  background: rgba(0, 0, 0, 0.05);
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* Avatar Components */

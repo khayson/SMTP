@@ -8,14 +8,14 @@ interface DeviceFrameProps {
 export default function DeviceFrame({ type, children }: DeviceFrameProps) {
   if (type === 'desktop') {
     return (
-      <div className="w-full flex-1 flex flex-col bg-white border border-[#E4E6EB] shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-500">
-        <div className="h-10 bg-[#F0F2F5] border-b border-[#E4E6EB] flex items-center px-4 shrink-0 justify-between">
+      <div className="w-full flex-1 flex flex-col bg-[var(--canvas)] border border-[var(--border)] shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+        <div className="h-10 bg-[var(--surface)] border-b border-[var(--border)] flex items-center px-4 shrink-0 justify-between">
            <div className="flex gap-2">
               <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
               <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
               <div className="w-3 h-3 rounded-full bg-[#28C840]" />
            </div>
-           <div className="bg-white px-6 py-1 rounded-md border border-[#E4E6EB] text-[10px] text-[#65676B] font-bold flex items-center gap-2 max-w-[400px] truncate">
+           <div className="bg-[var(--canvas)] px-6 py-1 rounded-md border border-[var(--border)] text-[10px] text-[var(--muted)] font-bold flex items-center gap-2 max-w-[400px] truncate">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               Secure Preview Engine
            </div>

@@ -9,8 +9,8 @@ export function Toast({ show, message }: ToastProps) {
   if (!show) return null;
   return (
     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-8 duration-500">
-      <div className="bg-white text-slate-950 px-8 py-4 rounded-2xl flex items-center gap-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/20">
-        <div className="w-6 h-6 bg-slate-950 rounded-full flex items-center justify-center text-white"><Check size={14} /></div>
+      <div className="bg-[var(--surface)] text-[#f8fafc] px-8 py-4 rounded-2xl flex items-center gap-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[var(--border)]">
+        <div className="w-6 h-6 bg-[var(--primary)] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#1877F2]/20"><Check size={14} /></div>
         <span className="text-[10px] font-black uppercase tracking-widest leading-loose">{message}</span>
       </div>
     </div>
