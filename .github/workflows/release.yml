@@ -38,11 +38,11 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'ForgeMail v__VERSION__ — Stable Infrastructure'
           releaseBody: |
-            **Portable (no installer):** download `ForgeMail_x64_portable_<tag>.zip`, extract anywhere, run `forgemail-desktop.exe`. Your data stays in the `data` folder next to the app.
+            **Recommended — portable (no install):** download **`ForgeMail_<version>_01_Windows_Portable.zip`** (sorts first in the asset list). Extract the folder, run `forgemail-desktop.exe`. The included `forgemail.portable` marker keeps your database in the `data` folder next to the app.
 
-            **Installer:** use the NSIS `*-setup.exe` if you prefer a classic install (and WebView2 bootstrap when needed).
+            **Installer:** use **`ForgeMail_<version>_x64-setup.exe`** if you prefer a classic install (helps bootstrap WebView2 on some PCs).
 
-            See the artifacts below for the latest ForgeMail stable delivery engine.
+            **Changelog:** [CHANGELOG.md on GitHub](https://github.com/khayson/SMTP/blob/main/CHANGELOG.md) (same source as the in-app *What's New* tab).
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -52,7 +52,10 @@ jobs:
           $rel = "src-tauri/target/release"
           $exe = Join-Path $rel "forgemail-desktop.exe"
           if (-not (Test-Path $exe)) { Write-Error "Missing $exe — build step did not produce the app binary."; exit 1 }
-          $zipName = "ForgeMail_x64_portable_${{ github.ref_name }}.zip"
+          $tag = "${{ github.ref_name }}"
+          $ver = $tag.TrimStart('v')
+          # Prefix 01_ so this asset sorts before the NSIS setup exe in the GitHub UI list
+          $zipName = "ForgeMail_${ver}_01_Windows_Portable.zip"
           $stageRoot = "portable-pkg/ForgeMail"
           New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
           Copy-Item $exe $stageRoot/
@@ -66,4 +69,8 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.ref_name }}" "ForgeMail_x64_portable_${{ github.ref_name }}.zip" --clobber
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $ver = $tag.TrimStart('v')
+          $zipName = "ForgeMail_${ver}_01_Windows_Portable.zip"
+          gh release upload $tag $zipName --clobber

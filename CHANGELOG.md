@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Home → What's New:** loads the latest **released** section from `CHANGELOG.md` on GitHub (`main`) with links to the file and Releases.
+- **Welcome & Setup guide:** clearer copy, Windows download guidance (portable ZIP vs installer), and SMTP notes that match typical localhost usage.
+
+### Changed
+
+- **GitHub Actions:** portable artifact renamed to `ForgeMail_<version>_01_Windows_Portable.zip` so it sorts **above** the NSIS installer in the release asset list; release notes call out portable first.
+
 ## [1.2.6] - 2026-05-14
 
 ### Added
