@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-05-14
+
 ### Added
 
 - **Portable Windows mode:** if an empty file named `forgemail.portable` sits next to `forgemail-desktop.exe`, the app stores its database and settings in a `data` folder beside the executable instead of under the OS app data directory.
@@ -23,4 +25,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Studio
 
-- Ongoing layout and styling updates across the studio shell (header, sidebar, message list, inspector, compose/create flows, drawer, settings, and global CSS).
+- Layout and styling updates across the studio shell (header, sidebar, message list, inspector, compose/create flows, drawer, settings, and global CSS).

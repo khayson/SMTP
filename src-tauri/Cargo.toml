@@ -1,6 +1,6 @@
 [package]
 name = "forgemail-desktop"
-version = "1.2.5"
+version = "1.2.6"
 description = "Premium Local SMTP Orchestrator"
 authors = ["Khay Studio"]
 edition = "2021"
