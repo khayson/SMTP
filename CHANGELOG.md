@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.7] - 2026-05-15
+
 ### Added
 
-- **Home → What's New:** loads the latest **released** section from `CHANGELOG.md` on GitHub (`main`) with links to the file and Releases.
-- **Welcome & Setup guide:** clearer copy, Windows download guidance (portable ZIP vs installer), and SMTP notes that match typical localhost usage.
+- **Home → What's New:** loads changelog content from `CHANGELOG.md` on GitHub (`main`); prefers **`[Unreleased]`** when it has notes, otherwise the latest numbered release section. Links to the file and Releases.
+- **Welcome & Setup guide:** clearer copy, Windows download guidance (portable ZIP vs installer), and SMTP localhost notes.
 
 ### Changed
 
-- **GitHub Actions:** portable artifact renamed to `ForgeMail_<version>_01_Windows_Portable.zip` so it sorts **above** the NSIS installer in the release asset list; release notes call out portable first.
+- **GitHub Actions:** portable artifact is `ForgeMail_<version>_01_Windows_Portable.zip` so it sorts above the NSIS installer in the release asset list; release notes emphasize portable first.
+
+### Fixed
+
+- **Content Security Policy:** `connect-src` allows `raw.githubusercontent.com` (and `api.github.com`) so the in-app changelog fetch works.
 
 ## [1.2.6] - 2026-05-14
 
