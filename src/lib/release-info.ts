@@ -5,7 +5,7 @@ export const CHANGELOG_RAW_URL =
   "https://raw.githubusercontent.com/khayson/SMTP/main/CHANGELOG.md";
 export const CHANGELOG_WEB_URL = `${GITHUB_REPO}/blob/main/CHANGELOG.md`;
 
-/** First numbered release section after [Unreleased] (latest shipped version). */
+/** Latest section: [Unreleased] if it has notes, else first numbered release after it. */
 export function extractLatestReleaseSection(
   markdown: string
 ): { heading: string; body: string } | null {
@@ -22,10 +22,15 @@ export function extractLatestReleaseSection(
         body.push(lines[i]);
         i++;
       }
-      if (tag !== "Unreleased") {
-        return { heading: line.replace(/^## /, "").trim(), body: body.join("\n").trim() };
+      const bodyStr = body.join("\n").trim();
+      if (tag === "Unreleased") {
+        const meaningful = /[^\s-]/.test(bodyStr);
+        if (meaningful) {
+          return { heading: "[Unreleased] — latest on main", body: bodyStr };
+        }
+        continue;
       }
-      continue;
+      return { heading: line.replace(/^## /, "").trim(), body: bodyStr };
     }
     i++;
   }
